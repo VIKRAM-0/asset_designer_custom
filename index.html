@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIVINIT · Fabric Configurator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ee;--surface:#faf8f5;--panel:#ffffff;
+  --border:#e4ddd6;--border-strong:#c8bfb5;
+  --text:#1a1612;--text-mid:#5a5248;--text-muted:#9b9188;
+  --accent:#2d4a3e;--accent-light:#3d6455;--accent-pale:#e8f0ec;
+  --warm:#8b6f47;--warm-light:#c4a882;
+  --font-d:'DM Serif Display',Georgia,serif;--font-b:'DM Sans',system-ui,sans-serif;
+  --r:3px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-weight:400;height:100vh;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* HEADER */
+header{height:56px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;z-index:50}
+.logo{display:flex;align-items:baseline;gap:10px}
+.logo-name{font-family:var(--font-d);font-size:18px;letter-spacing:.02em}
+.logo-tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)}
+.header-center{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:40px;padding:4px}
+.model-tab{padding:6px 20px;font-family:var(--font-b);font-size:12px;font-weight:500;letter-spacing:.04em;color:var(--text-muted);background:transparent;border:none;border-radius:36px;cursor:pointer;transition:all .2s ease}
+.model-tab.active{background:var(--panel);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.model-tab:hover:not(.active){color:var(--text)}
+.header-right{display:flex;align-items:center;gap:10px}
+.btn-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);background:transparent;color:var(--text-mid);cursor:pointer;border-radius:var(--r);transition:all .15s ease;font-size:15px}
+.btn-icon:hover{border-color:var(--border-strong);color:var(--text);background:var(--bg)}
+.btn-export{padding:8px 18px;font-family:var(--font-b);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--accent);border:1px solid var(--accent);border-radius:var(--r);cursor:pointer;transition:all .2s ease}
+.btn-export:hover{background:var(--accent-light)}
+.btn-render{padding:8px 18px;font-family:var(--font-b);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:var(--accent-pale);border:1px solid var(--accent);border-radius:var(--r);cursor:pointer;transition:all .2s ease}
+.btn-render:hover{background:var(--accent);color:#fff}
+
+/* LAYOUT */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* LEFT PANEL */
+.left-panel{width:288px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.panel-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-title{font-family:var(--font-d);font-size:14px;color:var(--text);margin-bottom:2px}
+.panel-sub{font-size:11px;color:var(--text-muted)}
+.fabric-scroll{flex:1;overflow-y:auto;padding:10px 0}
+.fabric-scroll::-webkit-scrollbar{width:4px}
+.fabric-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* GROUPS */
+.p-group{margin-bottom:2px}
+.p-group-hdr{padding:8px 20px 6px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.p-group-hdr:hover .p-name{color:var(--text)}
+.p-name{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-mid);transition:color .15s}
+.p-vendor{font-size:10px;color:var(--text-muted);font-style:italic;margin-top:1px}
+.p-arrow{font-size:10px;color:var(--text-muted);transition:transform .2s}
+.p-group.collapsed .p-arrow{transform:rotate(-90deg)}
+.p-swatches{padding:4px 14px 8px;display:grid;grid-template-columns:repeat(6,1fr);gap:5px;overflow:hidden}
+.p-group.collapsed .p-swatches{display:none}
+
+/* SWATCHES */
+.sw-btn{aspect-ratio:1;border-radius:4px;border:2px solid transparent;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,border-color .15s;background:var(--bg);flex-shrink:0}
+.sw-btn:hover{transform:scale(1.1);border-color:var(--border-strong)}
+.sw-btn.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.sw-btn img{width:100%;height:100%;object-fit:cover;display:block;border-radius:2px;pointer-events:none}
+.sw-color{width:100%;height:100%;border-radius:2px}
+.sw-tip{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:9px;white-space:nowrap;padding:2px 6px;border-radius:3px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100}
+.sw-btn:hover .sw-tip{opacity:1}
+
+/* VENDOR BADGE */
+.vbadge{display:inline-block;font-size:9px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:2px;border:1px solid var(--border);background:var(--bg);color:var(--text-muted)}
+.vbadge.mity{color:var(--warm);border-color:var(--warm-light);background:#fdf7ef}
+.vbadge.doug{color:#3b6b8c;border-color:#a0c4de;background:#f0f6fb}
+.vbadge.ennis{color:var(--accent);border-color:#b0cdc5;background:var(--accent-pale)}
+
+/* VIEWPORT */
+.viewport-wrap{flex:1;position:relative;background:var(--surface);overflow:hidden}
+#viewer{width:100%;height:100%;display:block;cursor:grab}
+#viewer:active{cursor:grabbing}
+.v-hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:14px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:40px;padding:7px 18px;font-size:11px;color:var(--text-muted);pointer-events:none}
+.v-hint span{display:flex;align-items:center;gap:5px}
+.h-key{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:0 5px;font-size:9px;color:var(--text-mid)}
+#loading{position:absolute;inset:0;background:rgba(245,242,238,.88);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;opacity:0;pointer-events:none;transition:opacity .3s}
+#loading.on{opacity:1;pointer-events:all}
+.spinner{width:30px;height:30px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#load-txt{font-size:11px;color:var(--text-muted);letter-spacing:.04em}
+
+/* RIGHT PANEL */
+.right-panel{width:258px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.right-panel::-webkit-scrollbar{width:4px}
+.right-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.r-sec{padding:14px 16px;border-bottom:1px solid var(--border)}
+.r-sec-t{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
+#mesh-list{display:flex;flex-direction:column;gap:3px}
+.mesh-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;transition:all .15s;font-size:12px;color:var(--text-mid)}
+.mesh-item:hover{background:var(--bg);border-color:var(--border)}
+.mesh-item.sel{background:var(--accent-pale);border-color:var(--accent);color:var(--text)}
+.mesh-item input[type=checkbox]{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0;cursor:pointer}
+.mesh-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.m-ctrl{display:flex;gap:5px;margin-bottom:8px}
+.m-btn{flex:1;padding:5px 0;font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--border);background:transparent;color:var(--text-muted);border-radius:var(--r);cursor:pointer;transition:all .15s}
+.m-btn:hover{border-color:var(--border-strong);color:var(--text)}
+/* Applied swatch */
+.app-prev{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)}
+.app-sw{width:34px;height:34px;border-radius:3px;background:var(--border);flex-shrink:0;overflow:hidden}
+.app-sw img{width:100%;height:100%;object-fit:cover}
+.app-name{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-vend{font-size:10px;color:var(--text-muted);margin-top:1px}
+/* Sliders */
+.sl-row{margin-bottom:12px}
+.sl-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--text-mid);margin-bottom:5px}
+.sl-val{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;appearance:none;height:3px;background:var(--border);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 0 2px #fff,0 0 0 3px var(--accent)}
+
+/* TOAST */
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--text);color:#fff;font-size:12px;padding:9px 18px;border-radius:40px;white-space:nowrap;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-name">Livinit</span>
+    <span class="logo-tag">Fabric Configurator</span>
+  </div>
+  <div class="header-center">
+    <button class="model-tab active" id="tab-chair" onclick="switchModel('chair')">Sierra Armchair</button>
+    <button class="model-tab" id="tab-sofa" onclick="switchModel('sofa')">Sofa</button>
+  </div>
+  <div class="header-right">
+    <button class="btn-icon" title="Reset" onclick="resetAll()">↺</button>
+    <button class="btn-render" onclick="renderScene()">AI Render</button>
+    <button class="btn-export" onclick="exportGLB()">Export GLB</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Left: Fabric Library -->
+  <div class="left-panel">
+    <div class="panel-header">
+      <div class="panel-title" id="lib-title">Chair Fabrics</div>
+      <div class="panel-sub" id="lib-sub">MityLite Sierra Collection</div>
+    </div>
+    <div class="fabric-scroll" id="fab-scroll"></div>
+  </div>
+
+  <!-- Center: 3D -->
+  <div class="viewport-wrap">
+    <canvas id="viewer"></canvas>
+    <div id="loading">
+      <div class="spinner"></div>
+      <div id="load-txt">Loading Model…</div>
+    </div>
+    <div class="v-hint" id="v-hint" style="display:none">
+      <span><span class="h-key">drag</span> Orbit</span>
+      <span><span class="h-key">right-drag</span> Pan</span>
+      <span><span class="h-key">scroll</span> Zoom</span>
+    </div>
+  </div>
+
+  <!-- Right: Controls -->
+  <div class="right-panel">
+    <div class="r-sec">
+      <div class="r-sec-t">Parts</div>
+      <div class="m-ctrl">
+        <button class="m-btn" onclick="selectAll()">All</button>
+        <button class="m-btn" onclick="deselectAll()">None</button>
+      </div>
+      <div id="mesh-list"><div style="font-size:11px;color:var(--text-muted)">Load a model to begin</div></div>
+    </div>
+    <div class="r-sec">
+      <div class="r-sec-t">Applied Material</div>
+      <div class="app-prev">
+        <div class="app-sw" id="app-sw"></div>
+        <div>
+          <div class="app-name" id="app-name">— none —</div>
+          <div class="app-vend" id="app-vend"></div>
+        </div>
+      </div>
+    </div>
+    <div class="r-sec">
+      <div class="r-sec-t">Material Adjustments</div>
+      <div class="sl-row">
+        <div class="sl-lbl">Brightness <span class="sl-val" id="v-brightness">1.00</span></div>
+        <input type="range" id="s-brightness" min="0.01" max="2" step="0.05" value="1" oninput="updateBrightness(+this.value)">
+      </div>
+      <div class="sl-row">
+        <div class="sl-lbl">Roughness <span class="sl-val" id="v-roughness">0.72</span></div>
+        <input type="range" id="s-roughness" min="0" max="1" step="0.01" value="0.72" oninput="applyProp('roughness',+this.value)">
+      </div>
+      <div class="sl-row">
+        <div class="sl-lbl">Metalness <span class="sl-val" id="v-metalness">0.00</span></div>
+        <input type="range" id="s-metalness" min="0" max="1" step="0.01" value="0" oninput="applyProp('metalness',+this.value)">
+      </div>
+      <div class="sl-row">
+        <div class="sl-lbl">Fabric Fuzz <span class="sl-val" id="v-sheen">0.00</span></div>
+        <input type="range" id="s-sheen" min="0" max="1" step="0.01" value="0" oninput="applyProp('sheen',+this.value)">
+      </div>
+      <div class="sl-row">
+        <div class="sl-lbl">Pattern Scale <span class="sl-val" id="v-scale">10.0</span></div>
+        <input type="range" id="s-scale" min="0.5" max="20" step="0.1" value="10" oninput="updateTexScale(+this.value)">
+      </div>
+      <div class="sl-row">
+        <div class="sl-lbl">Bump Strength <span class="sl-val" id="v-norm">1.0</span></div>
+        <input type="range" id="s-norm" min="0" max="3" step="0.1" value="1" oninput="updateNormScale(+this.value)">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Three.js r128 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────
+const CHAIR_GLB = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/custom_assets/chair_split.glb';
+const SOFA_GLB  = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/custom_assets/sofa.glb';
+const MITY_IMG  = 'https://fabrics.mityinc.com/server/public/fabrics/';
+
+// Polyhaven file API endpoint used at runtime:
+// https://api.polyhaven.com/files/{id}
+// Returns JSON with keys like 'nor_gl', 'rough', 'Diffuse' etc.
+// For each key: { '1k': { jpg: { url: '...' } } }
+const POLY_API  = 'https://api.polyhaven.com/files/';
+
+// ── Polyhaven texture ID lookup per material type ─────────────────────────
+// All IDs confirmed from user's Polyhaven list
+const POLY_IDS = {
+  fabric:  'fabric_pattern_05', // woven fabric — confirmed
+  vinyl:   'scuba_suede',       // smooth coated — confirmed (vinyl_pattern_01 is 404)
+  pu:      'leather_white',     // polyurethane — confirmed
+  leather: 'leather_white',     // full grain leather — confirmed
+  linen:   'rough_linen',       // linen/natural — confirmed
+  wood:    'brown_leather',     // faux wood frame — confirmed
+  // Sofa pattern-specific overrides (user-specified, keyed by patKey on item)
+  twist:   'hessian_230',       // Douglass Twist — confirmed
+  kaleid:  'caban',             // Douglass Kaleidoscope Neo — confirmed
+};
+
+// ── Supabase PBR fallback maps — used if Polyhaven fetch fails ────────────
+// All files confirmed .jpg (user shared leather_fabric/Roughness.jpg URL)
+// Folders confirmed from Supabase bucket screenshot
+const SB = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/';
+const SUPABASE_MAPS = {
+  fabric:  { norm: [SB+'cotton_fabric/Normal.jpg',  SB+'cotton_fabric/Normal.webp'],
+             rough:[SB+'cotton_fabric/Roughness.jpg',SB+'cotton_fabric/Roughness.webp'] },
+  linen:   { norm: [SB+'cotton_fabric/Normal.jpg',  SB+'cotton_fabric/Normal.webp'],
+             rough:[SB+'cotton_fabric/Roughness.jpg',SB+'cotton_fabric/Roughness.webp'] },
+  velvet:  { norm: [SB+'velvet_fabric/Normal.jpg',  SB+'velvet_fabric/Normal.webp'],
+             rough:[SB+'velvet_fabric/Roughness.jpg',SB+'velvet_fabric/Roughness.webp'] },
+  vinyl:   { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
+             rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
+  pu:      { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
+             rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
+  leather: { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
+             rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
+  wood:    { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
+             rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
+};
+
+// Try each URL in the array until one loads successfully —
+// matches App.tsx's loadTextureWithFallbacks which tries ['.webp','.jpg','.png','.jpeg'] in order
+function loadTexFirstSuccess(urls, srgb) {
+  if(!urls || !urls.length) return Promise.resolve(null);
+  return urls.reduce(
+    (chain, url) => chain.catch(() => tryLoadTex(url, srgb)),
+    Promise.reject()
+  ).catch(() => null);
+}
+
+
+// ── MityLite Sierra Armchair — Faux Wood Finishes (8) ─────────────────────
+const CHAIR_WOOD = [
+  { code:'ASHWOOD',   name:'Ashwood',   hex:'#c8a882', type:'wood' },
+  { code:'CASHEW',    name:'Cashew',    hex:'#b08d6b', type:'wood' },
+  { code:'CIDER',     name:'Cider',     hex:'#8b5e3c', type:'wood' },
+  { code:'EBONY',     name:'Ebony',     hex:'#2c1f14', type:'wood' },
+  { code:'ELMWOOD',   name:'Elmwood',   hex:'#a07850', type:'wood' },
+  { code:'KONA',      name:'Kona',      hex:'#5c3a1e', type:'wood' },
+  { code:'MINK',      name:'Mink',      hex:'#d0c0a8', type:'wood' },
+  { code:'SHORELINE', name:'Shoreline', hex:'#6e5840', type:'wood' },
+];
+
+// ── All 152 MityLite fabrics with real image URLs ─────────────────────────
+const MF = MITY_IMG; // shorthand alias
+const CHAIR_FABRICS = [
+  // ── Abilene (vinyl) ───────────────────────────────────────────────────
+  {name:'Abilene Bark',    img:MF+'ABILE808V.jpg',    type:'vinyl', series:'Abilene'},
+  {name:'Abilene Black',   img:MF+'ABILE9009V.jpg',   type:'vinyl', series:'Abilene'},
+  {name:'Abilene Honey',   img:MF+'ABILE606V.jpg',    type:'vinyl', series:'Abilene'},
+  {name:'Abilene Oak',     img:MF+'ABILE807V.jpg',    type:'vinyl', series:'Abilene'},
+  {name:'Abilene Walnut',  img:MF+'ABILE8006V.jpg',   type:'vinyl', series:'Abilene'},
+  // ── All American (fabric) ─────────────────────────────────────────────
+  {name:'Adobe White',     img:MF+'adobe-white-.jpg',          type:'fabric', series:'All American'},
+  {name:'Alabaster',       img:MF+'alabaster.jpg',             type:'fabric', series:'All American'},
+  {name:'American Beauty', img:MF+'american-beauty.jpg',       type:'fabric', series:'All American'},
+  {name:'AA Black',        img:MF+'black.jpg',                 type:'fabric', series:'All American'},
+  {name:'Blue Ridge',      img:MF+'blue-ridge.jpg',            type:'fabric', series:'All American'},
+  {name:'Bright White',    img:MF+'bright-white.jpg',          type:'fabric', series:'All American'},
+  {name:'Bronze',          img:MF+'bronze.jpg',                type:'fabric', series:'All American'},
+  {name:'Burgundy',        img:MF+'burgundy.jpg',              type:'fabric', series:'All American'},
+  {name:'Cinnabar',        img:MF+'cinnabar.jpg',              type:'fabric', series:'All American'},
+  {name:'Claret',          img:MF+'all-american_claret.jpg',   type:'fabric', series:'All American'},
+  {name:'Crocus',          img:MF+'crocus.jpg',                type:'fabric', series:'All American'},
+  {name:'Dove',            img:MF+'dove.jpg',                  type:'fabric', series:'All American'},
+  {name:'Dusty Jade',      img:MF+'dusty-jade.jpg',            type:'fabric', series:'All American'},
+  {name:'Dutch Blue',      img:MF+'dutch-blue.jpg',            type:'fabric', series:'All American'},
+  {name:'Forest',          img:MF+'forest.jpg',                type:'fabric', series:'All American'},
+  {name:'Grotto',          img:MF+'grotto.jpg',                type:'fabric', series:'All American'},
+  {name:'GunMetal',        img:MF+'gunmetal.jpg',              type:'fabric', series:'All American'},
+  {name:'Imperial Blue',   img:MF+'imperial-blue.jpg',         type:'fabric', series:'All American'},
+  {name:'Mauve',           img:MF+'mauve.jpg',                 type:'fabric', series:'All American'},
+  {name:'Paprika',         img:MF+'paprika.jpg',               type:'fabric', series:'All American'},
+  {name:'Parchment',       img:MF+'parchment-.jpg',            type:'fabric', series:'All American'},
+  {name:'Plum',            img:MF+'plum.jpg',                  type:'fabric', series:'All American'},
+  {name:'Raspberry',       img:MF+'raspberry.jpg',             type:'fabric', series:'All American'},
+  {name:'Regimental Blue', img:MF+'regimental-blue.jpg',       type:'fabric', series:'All American'},
+  {name:'Royal',           img:MF+'royal.jpg',                 type:'fabric', series:'All American'},
+  {name:'Sage',            img:MF+'sage.jpg',                  type:'fabric', series:'All American'},
+  {name:'Sand',            img:MF+'sand.jpg',                  type:'fabric', series:'All American'},
+  {name:'Sangria',         img:MF+'sangria.jpg',               type:'fabric', series:'All American'},
+  {name:'Tea Rose',        img:MF+'tea-rose.jpg',              type:'fabric', series:'All American'},
+  {name:'Tomato',          img:MF+'tomato.jpg',                type:'fabric', series:'All American'},
+  {name:'Turquoise',       img:MF+'turquoise.jpg',             type:'fabric', series:'All American'},
+  {name:'Yew Green',       img:MF+'yew-green.jpg',             type:'fabric', series:'All American'},
+  // ── Amarillo (vinyl) ──────────────────────────────────────────────────
+  {name:'Amarillo Black',    img:MF+'AMARI9009V.jpg',  type:'vinyl', series:'Amarillo'},
+  {name:'Amarillo Cloud',    img:MF+'AMARI66V.jpg',    type:'vinyl', series:'Amarillo'},
+  {name:'Amarillo Flame',    img:MF+'AMARI1373V.jpg',  type:'vinyl', series:'Amarillo'},
+  {name:'Amarillo Java',     img:MF+'AMARI8009V.jpg',  type:'vinyl', series:'Amarillo'},
+  {name:'Amarillo Moccasin', img:MF+'AMARI6010V.jpg',  type:'vinyl', series:'Amarillo'},
+  {name:'Amarillo Saddle',   img:MF+'AMARI810V.jpg',   type:'vinyl', series:'Amarillo'},
+  {name:'Amarillo Satchel',  img:MF+'AMARI8019V.jpg',  type:'vinyl', series:'Amarillo'},
+  // ── Amuse (PU) ────────────────────────────────────────────────────────
+  {name:'Amuse Admiral', img:MF+'amuse-admiral.jpg', type:'pu', series:'Amuse'},
+  {name:'Amuse Alloy',   img:MF+'amuse-alloy.jpg',   type:'pu', series:'Amuse'},
+  {name:'Amuse Mocha',   img:MF+'amuse-mocha.jpg',   type:'pu', series:'Amuse'},
+  {name:'Amuse Poppy',   img:MF+'amuse-poppy.jpg',   type:'pu', series:'Amuse'},
+  {name:'Amuse Quartz',  img:MF+'amuse-quartz.jpg',  type:'pu', series:'Amuse'},
+  // ── Anchor (fabric) ───────────────────────────────────────────────────
+  {name:'Anchor Albatross',  img:MF+'Anchor_Albatross.jpg',  type:'fabric', series:'Anchor'},
+  {name:'Anchor Cardinal',   img:MF+'Anchor_Cardinal.jpg',   type:'fabric', series:'Anchor'},
+  {name:'Anchor Driftwood',  img:MF+'Anchor_Driftwood.jpg',  type:'fabric', series:'Anchor'},
+  {name:'Anchor Fog',        img:MF+'Anchor_Fog.jpg',        type:'fabric', series:'Anchor'},
+  {name:'Anchor Gull',       img:MF+'Anchor_Gull.jpg',       type:'fabric', series:'Anchor'},
+  {name:'Anchor Iceberg',    img:MF+'Anchor_Iceberg.jpg',    type:'fabric', series:'Anchor'},
+  {name:'Anchor Ink',        img:MF+'Anchor_Ink.jpg',        type:'fabric', series:'Anchor'},
+  {name:'Anchor Iron',       img:MF+'Anchor_Iron.jpg',       type:'fabric', series:'Anchor'},
+  {name:'Anchor Pea',        img:MF+'Anchor_Pea.jpg',        type:'fabric', series:'Anchor'},
+  {name:'Anchor Salt',       img:MF+'Anchor_Salt.jpg',       type:'fabric', series:'Anchor'},
+  {name:'Anchor Sand Dollar', img:MF+'Anchor_SandDollar.jpg',type:'fabric', series:'Anchor'},
+  {name:'Anchor Storm',      img:MF+'Anchor_Storm.jpg',      type:'fabric', series:'Anchor'},
+  // ── Archetype (fabric) ────────────────────────────────────────────────
+  {name:'Archetype Admiral',   img:MF+'archetype_admiral_zm.jpg',    type:'fabric', series:'Archetype'},
+  {name:'Archetype Anchor',    img:MF+'archetype_anchor_zm.jpg',     type:'fabric', series:'Archetype'},
+  {name:'Archetype Blackberry',img:MF+'archetype_blackberry_zm.jpg', type:'fabric', series:'Archetype'},
+  {name:'Archetype Bourbon',   img:MF+'archetype_bourbon_zm.jpg',    type:'fabric', series:'Archetype'},
+  {name:'Archetype Cafe',      img:MF+'archetype_cafe_zm.jpg',       type:'fabric', series:'Archetype'},
+  {name:'Archetype Carbon',    img:MF+'300archetype_carbon_zm.jpg',  type:'fabric', series:'Archetype'},
+  {name:'Archetype Hemp',      img:MF+'archetype_hemp_zm.jpg',       type:'fabric', series:'Archetype'},
+  {name:'Archetype Herbal',    img:MF+'archetype_herbal_zm.jpg',     type:'fabric', series:'Archetype'},
+  {name:'Archetype Quartz',    img:MF+'archetype_quartz_zm.jpg',     type:'fabric', series:'Archetype'},
+  {name:'Archetype Silt',      img:MF+'archetype_silt_zm.jpg',       type:'fabric', series:'Archetype'},
+  {name:'Archetype Smoke',     img:MF+'archetype_smoke_zm.jpg',      type:'fabric', series:'Archetype'},
+  {name:'Archetype Vermilion', img:MF+'archetype_vermilion_zm.jpg',  type:'fabric', series:'Archetype'},
+  // ── Aretha (fabric) ───────────────────────────────────────────────────
+  {name:'Aretha Midnight', img:MF+'culp-aretha-midnight.jpg', type:'fabric', series:'Aretha'},
+  {name:'Aretha Smoke',    img:MF+'culp-aretha-smoke.jpg',    type:'fabric', series:'Aretha'},
+  // ── Artisanal EPU (PU) ────────────────────────────────────────────────
+  {name:'Art. Blue Grass',  img:MF+'momentum-artisanal-epu-blue-grass.jpg',  type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Blushing',    img:MF+'momentum-artisanal-epu-blushing.jpg',    type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Brushed Tan', img:MF+'momentum-artisanal-epu-brushed-tan.jpg', type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Caspian',     img:MF+'momentum-artisanal-epu-caspian.jpg',     type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Cavern',      img:MF+'momentum-artisanal-epu-cavern.jpg',      type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Coral',       img:MF+'momentum-artisanal-epu-coral.jpg',       type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Fog',         img:MF+'momentum-artisanal-epu-fog.jpg',         type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Limoncello',  img:MF+'momentum-artisanal-epu-limoncello.jpg',  type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Lunar',       img:MF+'momentum-artisanal-epu-lunar.jpg',       type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Matcha',      img:MF+'momentum-artisanal-epu-matcha.jpg',      type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Mulberry',    img:MF+'momentum-artisanal-epu-mulberry.jpg',    type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Navy',        img:MF+'momentum-artisanal-epu-navy.jpg',        type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Oak',         img:MF+'momentum-artisanal-epu-oak.jpg',         type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Onyx',        img:MF+'momentum-artisanal-epu-onyx.jpg',        type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Pathalo',     img:MF+'momentum-artisanal-epu-pathalo.jpg',     type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Pebble',      img:MF+'momentum-artisanal-epu-pebble.jpg',      type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Periwinkle',  img:MF+'momentum-artisanal-epu-periwinkle.jpg',  type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Raw Sugar',   img:MF+'momentum-artisanal-epu-raw-sugar.jpg',   type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Rose Suede',  img:MF+'momentum-artisanal-epu-rose-suede.jpg',  type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Seaglass',    img:MF+'momentum-artisanal-epu-seaglass.jpg',    type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Shale',       img:MF+'momentum-artisanal-epu-shale.jpg',       type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Ski Lift',    img:MF+'momentum-artisanal-epu-ski-lift.jpg',    type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Sky',         img:MF+'momentum-artisanal-epu-sky.jpg',         type:'pu', series:'Artisanal EPU'},
+  {name:'Art. Taupe',       img:MF+'momentum-artisanal-epu-taupe.jpg',       type:'pu', series:'Artisanal EPU'},
+  // ── Berwick Tweed (fabric) ────────────────────────────────────────────
+  {name:'BT After Glow',       img:MF+'berwick-tweed_after-glow_100.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT All Nighter',      img:MF+'berwick-tweed_all-nighter_200.jpg',      type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Angels Feather',   img:MF+'berwick-tweed_angels-feather_300.jpg',   type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Baja Sunset',      img:MF+'berwick-tweed_baja-sunset_400.jpg',      type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Bobcat Whisker',   img:MF+'berwick-tweed_bobcat-whisker_1100.jpg',  type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Bodhi Tree',       img:MF+'berwick-tweed_bodhi-tree_500.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Carbon Footprint', img:MF+'berwick-tweed_carbon-footprint_600.jpg', type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Cedar Ridge',      img:MF+'berwick-tweed_cedar-ridge_700.jpg',      type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Dream Catcher',    img:MF+'berwick-tweed_dream-catcher_800.jpg',    type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Labyrinth Walk',   img:MF+'berwick-tweed_labyrinth-walk_900.jpg',   type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Mischeavous Mink', img:MF+'berwick-tweed_mischeavous-mink_1000.jpg',type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Polished Pewter',  img:MF+'berwick-tweed_polished-pewter_1200.jpg', type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Racoon Eyes',      img:MF+'berwick-tweed_racoon-eyes_1300.jpg',     type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Sandy Toes',       img:MF+'berwick-tweed_sandy-toes_1400.jpg',      type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Sea Glass',        img:MF+'berwick-tweed_sea-glass_1500.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Soft Suede',       img:MF+'berwick-tweed_soft-suede_1600.jpg',      type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Spiked Apricot',   img:MF+'berwick-tweed_spiked-apricot_1700.jpg',  type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Thai Basil',       img:MF+'berwick-tweed_thai-basil_1800.jpg',      type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Tranquality',      img:MF+'berwick-tweed_tranquality_1900.jpg',     type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Zen Essence',      img:MF+'berwick-tweed_zen-essence_2000.jpg',     type:'fabric', series:'Berwick Tweed'},
+  // ── Beso (fabric) ─────────────────────────────────────────────────────
+  {name:'Beso Aqua',    img:MF+'culp-beso-aqua.jpg',     type:'fabric', series:'Beso'},
+  {name:'Beso Capri',   img:MF+'culp-beso-capri.jpg',    type:'fabric', series:'Beso'},
+  {name:'Beso Chalice', img:MF+'culp-beso-chalice.jpg',  type:'fabric', series:'Beso'},
+  {name:'Beso Coral',   img:MF+'culp-beso-coral.jpg',    type:'fabric', series:'Beso'},
+  {name:'Beso Dusk',    img:MF+'culp-beso-dusk.jpg',     type:'fabric', series:'Beso'},
+  {name:'Beso Flaxen',  img:MF+'culp-beso-flaxen.jpg',   type:'fabric', series:'Beso'},
+  {name:'Beso Graphite',img:MF+'culp-beso-graphite.jpg', type:'fabric', series:'Beso'},
+  {name:'Beso Harbor',  img:MF+'culp-beso-harbor.jpg',   type:'fabric', series:'Beso'},
+  {name:'Beso Jute',    img:MF+'culp-beso-jute.jpg',     type:'fabric', series:'Beso'},
+  {name:'Beso Lupine',  img:MF+'culp-beso-lupine.jpg',   type:'fabric', series:'Beso'},
+  {name:'Beso Magenta', img:MF+'culp-beso-magenta.jpg',  type:'fabric', series:'Beso'},
+  {name:'Beso Onyx',    img:MF+'culp-beso-onyx.jpg',     type:'fabric', series:'Beso'},
+  {name:'Beso Peridot', img:MF+'culp-beso-peridot.jpg',  type:'fabric', series:'Beso'},
+  {name:'Beso Scarlet', img:MF+'culp-beso-scarlet.jpg',  type:'fabric', series:'Beso'},
+  {name:'Beso Silver',  img:MF+'culp-beso-silver.jpg',   type:'fabric', series:'Beso'},
+  {name:'Beso Stone',   img:MF+'culp-beso-stone.jpg',    type:'fabric', series:'Beso'},
+  // ── Bestie (fabric) ───────────────────────────────────────────────────
+  {name:'Bestie Brownstone', img:MF+'culp-bestie-brownstone.jpg', type:'fabric', series:'Bestie'},
+  {name:'Bestie Citrine',    img:MF+'culp-bestie-citrine.jpg',    type:'fabric', series:'Bestie'},
+  {name:'Bestie H2O',        img:MF+'culp-bestie-h2o.jpg',        type:'fabric', series:'Bestie'},
+  {name:'Bestie Lapis',      img:MF+'culp-bestie-lapis.jpg',      type:'fabric', series:'Bestie'},
+  {name:'Bestie Mica',       img:MF+'culp-bestie-mica.jpg',       type:'fabric', series:'Bestie'},
+  {name:'Bestie Obsidian',   img:MF+'culp-bestie-obsidian.jpg',   type:'fabric', series:'Bestie'},
+  {name:'Bestie Onyx',       img:MF+'culp-bestie-onyx.jpg',       type:'fabric', series:'Bestie'},
+  {name:'Bestie Peridot',    img:MF+'culp-bestie-peridot.jpg',    type:'fabric', series:'Bestie'},
+  {name:'Bestie Pewter',     img:MF+'culp-bestie-pewter.jpg',     type:'fabric', series:'Bestie'},
+];
+
+// ── Douglass & Ennis Sofa Fabrics ─────────────────────────────────────────
+const D = 'https://douglassfabric.com/images/Color_Way/';
+const SOFA_KALEID = [
+  {name:'Bazaar',id:'712',hex:'#6b4e5e'},{name:'Bronze',id:'541',hex:'#8b6840'},{name:'Champagne',id:'120',hex:'#d4c4a0'},
+  {name:'Chocolate',id:'420',hex:'#5a3820'},{name:'Citron',id:'609',hex:'#8f9a2c'},{name:'Foam',id:'648',hex:'#b8d4cc'},
+  {name:'Haze',id:'220',hex:'#a0a8b8'},{name:'Iceberg',id:'942',hex:'#d8e8f0'},{name:'Marsh',id:'104',hex:'#8aa880'},
+  {name:'Neptune',id:'628',hex:'#3a7888'},{name:'Saffron',id:'547',hex:'#d4903a'},{name:'Smokehouse',id:'461',hex:'#7a6858'},
+  {name:'Taupe',id:'111',hex:'#b8a890'},{name:'Teal',id:'380',hex:'#2a6868'},
+].map(c=>({...c,img:D+'5308-'+c.id+'.jpg',pattern:'Kaleidoscope Neo',patId:'5308',vendor:'douglass',type:'vinyl',patKey:'kaleid'}));
+
+const SOFA_TWIST = [
+  {name:'Bamboo',id:'119',hex:'#c4b87a'},{name:'Burlap',id:'123',hex:'#c8b890'},{name:'Cadmium',id:'226',hex:'#909898'},
+  {name:'Chambray',id:'310',hex:'#6888a8'},{name:'Cotton',id:'993',hex:'#f0ece4'},{name:'Flannel',id:'228',hex:'#989098'},
+  {name:'Gauze',id:'942',hex:'#dcd8c8'},{name:'Grasscloth',id:'630',hex:'#789060'},{name:'Hemp',id:'410',hex:'#b0a070'},
+  {name:'Henna',id:'443',hex:'#a04830'},{name:'Indigo',id:'376',hex:'#2a3870'},{name:'Kona',id:'481',hex:'#884820'},
+  {name:'Linen',id:'945',hex:'#d8c8a0'},{name:'Oxford',id:'104',hex:'#8a9880'},{name:'Parchment',id:'124',hex:'#dcd0b0'},
+  {name:'Raffia',id:'153',hex:'#c8b890'},{name:'Sari',id:'332',hex:'#485880'},{name:'Scuba',id:'308',hex:'#3a5888'},
+  {name:'Sheer',id:'943',hex:'#e0dcd0'},{name:'Spindel',id:'460',hex:'#807858'},{name:'Tapestry',id:'463',hex:'#6a7058'},
+  {name:'Tobacco',id:'440',hex:'#806040'},{name:'Worsted',id:'450',hex:'#a09888'},
+].map(c=>({...c,img:D+'5881-'+c.id+'.jpg',pattern:'Twist',patId:'5881',vendor:'douglass',type:'linen',patKey:'twist'}));
+
+const SOFA_LINUM = [
+  {name:'805 Bark',hex:'#8b6b48'},{name:'902 Flax',hex:'#d4c090'},{name:'87 Chestnut',hex:'#7a4e30'},
+  {name:'97 Gunmetal',hex:'#606870'},{name:'106 Denim',hex:'#4a6888'},{name:'14 Cherry',hex:'#882030'},
+  {name:'303 Cerulean',hex:'#3a5888'},{name:'405 Russet',hex:'#8a4828'},{name:'603 Cotton',hex:'#e8e4dc'},
+  {name:'705 Sterling',hex:'#a8aab0'},{name:'904 Ash',hex:'#c0bab0'},{name:'909 Raven',hex:'#1a1818'},
+  {name:'94 Pewter',hex:'#888880'},
+].map(c=>({...c,img:null,pattern:'Linum',vendor:'ennis',type:'linen'}));
+
+const SOFA_CHALLENGER = [
+  {name:'98 Charcoal',hex:'#484848'},{name:'909 Raven',hex:'#1a1818'},{name:'602 Mystic White',hex:'#f0ece4'},
+  {name:'303 Denim Blue',hex:'#3a5888'},{name:'109 Plum',hex:'#5a2860'},{name:'54 Citron',hex:'#8a9828'},
+  {name:'14 Cherry Red',hex:'#882030'},{name:'63 Vanilla',hex:'#e8d8b0'},{name:'605 Cream',hex:'#ece4cc'},
+  {name:'609 Taupe',hex:'#b8a888'},{name:'805 Bark',hex:'#8b6b48'},{name:'87 Chestnut',hex:'#7a4e30'},
+  {name:'91 Dove',hex:'#d8d4cc'},{name:'97 Slate',hex:'#707880'},{name:'83 Tan',hex:'#c8a878'},
+  {name:'64 Pearl',hex:'#e8e4d8'},{name:'66 Diamond',hex:'#d8d8d8'},{name:'802 Mocha',hex:'#806048'},
+  {name:'804 Amber',hex:'#c89048'},{name:'809 Chocolate',hex:'#503820'},{name:'86 Earth',hex:'#8a6840'},
+  {name:'88 Tobacco',hex:'#784830'},{name:'902 Seagull',hex:'#d0ccc4'},{name:'903 Fog',hex:'#b8b8b0'},
+  {name:'905 Steel',hex:'#8898a8'},{name:'908 Chinchilla',hex:'#a8a098'},{name:'102 Champagne',hex:'#dcc8a0'},
+  {name:'108 Wine',hex:'#702838'},{name:'17 Garnet',hex:'#781828'},{name:'205 Spring',hex:'#688050'},
+  {name:'21 Meadow',hex:'#608858'},{name:'24 Deep Teal',hex:'#1a5860'},{name:'31 Lagoon',hex:'#3a7888'},
+  {name:'33 Celeste',hex:'#80b8c8'},
+].map(c=>({...c,img:null,pattern:'Challenger',vendor:'ennis',type:'leather'}));
+
+// ── Library ───────────────────────────────────────────────────────────────
+const LIBRARY = {
+  chair: [
+    { group:'Faux Wood Finishes',     vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_WOOD },
+    { group:'Abilene · Vinyl',        vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Abilene') },
+    { group:'All American · Fabric',  vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='All American') },
+    { group:'Amarillo · Vinyl',       vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Amarillo') },
+    { group:'Amuse · PU',             vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Amuse') },
+    { group:'Anchor · Fabric',        vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Anchor') },
+    { group:'Archetype · Fabric',     vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Archetype') },
+    { group:'Aretha · Fabric',        vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Aretha') },
+    { group:'Artisanal EPU · PU',     vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Artisanal EPU') },
+    { group:'Berwick Tweed · Fabric', vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Berwick Tweed') },
+    { group:'Beso · Fabric',          vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Beso') },
+    { group:'Bestie · Fabric',        vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_FABRICS.filter(f=>f.series==='Bestie') },
+  ],
+  sofa: [
+    { group:'Kaleidoscope Neo', vendor:'Douglass #5308', vclass:'doug', items: SOFA_KALEID },
+    { group:'Twist',            vendor:'Douglass #5881', vclass:'doug', items: SOFA_TWIST  },
+    { group:'Linum',            vendor:'Ennis Fabrics',  vclass:'ennis',items: SOFA_LINUM  },
+    { group:'Challenger',       vendor:'Ennis Fabrics',  vclass:'ennis',items: SOFA_CHALLENGER },
+  ]
+};
+
+// ── App State ─────────────────────────────────────────────────────────────
+let currentModelKey = 'chair';
+let meshEntries = [];
+let currentModel = null;
+let activeBtnEl = null;
+let lastAppliedItem = null;
+
+// slider state
+let sBrightness = 1.0, sRoughness = 0.72, sMetalness = 0, sSheen = 0, sScale = 10.0, sNorm = 1.0;
+// base color for brightness recalc
+let baseColorHex = '#ffffff';
+const BASE_TILE = 0.3;
+
+// Polyhaven cache: polyId -> { normUrl, roughUrl } (resolved at runtime)
+const polyCache = {};
+
+// Texture cache
+const texCache = {};
+const texLoader = new THREE.TextureLoader();
+texLoader.setCrossOrigin('anonymous');
+
+// Three.js refs
+let renderer, scene, camera, pmremGen, gltfLoader;
+let sph = {theta:0.4, phi:1.15, r:2.2};
+let tgt = new THREE.Vector3();
+let _dirty = true;
+function markDirty(){ _dirty = true; }
+
+// ── Utilities ─────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+function setSliderVal(id, val, decimals=2) {
+  const el = document.getElementById('s-'+id);
+  if(el) el.value = val;
+  const vEl = document.getElementById('v-'+id);
+  if(vEl) vEl.textContent = (+val).toFixed(decimals);
+}
+
+function tryLoadTex(url, isSrgb) {
+  if(texCache[url]) return Promise.resolve(texCache[url]);
+  return new Promise((resolve, reject) => {
+    texLoader.load(url, t => {
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.encoding = isSrgb ? THREE.sRGBEncoding : THREE.LinearEncoding;
+      t.flipY = false;
+      t.anisotropy = 16;
+      texCache[url] = t;
+      resolve(t);
+    }, undefined, ()=>reject(new Error('404')));
+  });
+}
+
+// ── makeGreyscaleTex (from App.tsx exactly) ───────────────────────────────
+function makeGreyscaleTex(origTex) {
+  if(!origTex || !origTex.image) return null;
+  try {
+    const img = origTex.image;
+    const w = img.naturalWidth || img.width || (img instanceof ImageBitmap ? img.width : 0) || 512;
+    const h = img.naturalHeight || img.height || (img instanceof ImageBitmap ? img.height : 0) || 512;
+    if(w===0 || h===0) return null;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    if(!ctx) return null;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,w,h);
+    ctx.filter = 'grayscale(100%) brightness(1.2) contrast(1.1)';
+    ctx.drawImage(img,0,0,w,h);
+    const t = new THREE.CanvasTexture(c);
+    t.encoding = origTex.encoding || THREE.sRGBEncoding;
+    t.wrapS = origTex.wrapS || THREE.RepeatWrapping;
+    t.wrapT = origTex.wrapT || THREE.RepeatWrapping;
+    if(origTex.repeat) t.repeat.copy(origTex.repeat);
+    if(origTex.offset) t.offset.copy(origTex.offset);
+    if(origTex.flipY !== undefined) t.flipY = origTex.flipY;
+    t.anisotropy = origTex.anisotropy || 16;
+    t.needsUpdate = true;
+    return t;
+  } catch(e) { return null; }
+}
+
+// ── Polyhaven: fetch normal+roughness URLs for a texture ID ───────────────
+const POLY_NORM_KEYS  = ['nor_gl','Normal','nor_dx','nor','Nor_GL','NormalGL'];
+const POLY_ROUGH_KEYS = ['Rough','rough','Roughness','roughness'];
+
+function pickPolyUrl(files, keys) {
+  const norm = s => s.toLowerCase().replace(/[\s_-]/g,'');
+  const fk = Object.keys(files);
+  for(const key of keys) {
+    const d = files[key];
+    if(d) {
+      const url = d?.['1k']?.jpg?.url || d?.['2k']?.jpg?.url;
+      if(url) return url;
+    }
+    const nk = norm(key);
+    const m = fk.find(k=>norm(k)===nk);
+    if(m && files[m]) {
+      const url = files[m]?.['1k']?.jpg?.url || files[m]?.['2k']?.jpg?.url;
+      if(url) return url;
+    }
+  }
+  return null;
+}
+
+async function getPolyMaps(polyId) {
+  if(polyCache[polyId]) return polyCache[polyId];
+  try {
+    const res = await fetch(POLY_API + polyId);
+    if(!res.ok) throw new Error('API error');
+    const files = await res.json();
+    const normUrl  = pickPolyUrl(files, POLY_NORM_KEYS);
+    const roughUrl = pickPolyUrl(files, POLY_ROUGH_KEYS);
+    polyCache[polyId] = { normUrl, roughUrl };
+    return polyCache[polyId];
+  } catch(e) {
+    console.warn('Polyhaven unavailable for', polyId, e);
+    polyCache[polyId] = { normUrl:null, roughUrl:null };
+    return polyCache[polyId];
+  }
+}
+
+// ── Apply swatch to checked meshes ────────────────────────────────────────
+async function applySwatch(gi, ii, btnEl) {
+  const item = LIBRARY[currentModelKey][gi].items[ii];
+  if(!meshEntries.some(e=>e.checked)) { showToast('Select a part →'); return; }
+
+  // Active state
+  if(activeBtnEl) activeBtnEl.classList.remove('active');
+  activeBtnEl = btnEl;
+  btnEl.classList.add('active');
+  lastAppliedItem = item;
+
+  // Update applied preview
+  document.getElementById('app-name').textContent = item.name;
+  const vendorLabel = item.vendor==='douglass' ? 'Douglass Fabrics' : item.vendor==='ennis' ? 'Ennis Fabrics' : 'MityLite Sierra';
+  document.getElementById('app-vend').textContent = (item.pattern||'') + (item.pattern?' · ':'') + vendorLabel;
+  const appSw = document.getElementById('app-sw');
+  appSw.innerHTML = '';
+  appSw.style.background = item.hex || '#ccc';
+  if(item.img) {
+    const img = document.createElement('img');
+    img.src = item.img; img.alt = item.name;
+    img.onerror = () => { img.remove(); appSw.style.background = item.hex || '#ccc'; };
+    appSw.appendChild(img);
+  }
+
+  // Set slider defaults per material type
+  const defaults = {
+    wood:    { roughness:0.55, sheen:0.00, metalness:0.0, scale:5.0,  norm:0.8 },
+    vinyl:   { roughness:0.48, sheen:0.05, metalness:0.0, scale:8.0,  norm:0.4 },
+    pu:      { roughness:0.52, sheen:0.10, metalness:0.0, scale:8.0,  norm:0.5 },
+    leather: { roughness:0.45, sheen:0.05, metalness:0.0, scale:6.0,  norm:0.6 },
+    fabric:  { roughness:0.78, sheen:0.25, metalness:0.0, scale:10.0, norm:1.0 },
+    linen:   { roughness:0.82, sheen:0.20, metalness:0.0, scale:10.0, norm:1.0 },
+  };
+  const def = defaults[item.type] || defaults.fabric;
+  sRoughness=def.roughness; sMetalness=def.metalness; sSheen=def.sheen; sScale=def.scale; sNorm=def.norm; sBrightness=1.0;
+  setSliderVal('brightness',1.00); setSliderVal('roughness',def.roughness); setSliderVal('metalness',0);
+  setSliderVal('sheen',def.sheen,2); setSliderVal('scale',def.scale,1); setSliderVal('norm',def.norm,1);
+
+  // ── WOOD: keep original texture, just tint color ──────────────────────
+  if(item.type === 'wood') {
+    const tintColor = new THREE.Color(item.hex);
+    meshEntries.forEach(entry => {
+      if(!entry.checked) return;
+      const mat = entry.greyMat;
+      // Restore original maps (wood grain)
+      mat.map = entry.origMat.map || null;
+      mat.normalMap = entry.origMat.normalMap || null;
+      mat.roughnessMap = entry.origMat.roughnessMap || null;
+      // Tint with wood hex
+      mat.color.copy(tintColor).multiplyScalar(Math.max(0.01, sBrightness));
+      mat.roughness = sRoughness;
+      mat.metalness = sMetalness;
+      mat.sheen = sSheen;
+      if(mat.normalMap) mat.normalScale.set(sNorm, sNorm);
+      mat.needsUpdate = true;
+      if(Array.isArray(entry.mesh.material)) {
+        const arr = [...entry.mesh.material];
+        arr[entry.matIndex] = mat;
+        entry.mesh.material = arr;
+      }
+    });
+    markDirty();
+    showToast(item.name + ' applied!');
+    return;
+  }
+
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('load-txt').textContent = 'Loading Texture…';
+
+  try {
+    // 1. Load vendor swatch image as diffuse texture
+    let diffTex = null;
+    if(item.img) {
+      diffTex = await tryLoadTex(item.img, true).catch(()=>null);
+    }
+
+    // 2. Get Polyhaven normal+roughness for this material type
+    const polyId = (item.patKey && POLY_IDS[item.patKey]) ? POLY_IDS[item.patKey] : (POLY_IDS[item.type] || POLY_IDS.fabric);
+    const { normUrl, roughUrl } = await getPolyMaps(polyId);
+
+    let normTex  = normUrl  ? await tryLoadTex(normUrl,  false).catch(()=>null) : null;
+    let roughTex = roughUrl ? await tryLoadTex(roughUrl, false).catch(()=>null) : null;
+
+    // Fallback to Supabase if Polyhaven maps failed
+    const sbMaps = SUPABASE_MAPS[item.type] || SUPABASE_MAPS.fabric;
+    if(!normTex)  normTex  = await loadTexFirstSuccess(sbMaps.norm,  false);
+    if(!roughTex) roughTex = await loadTexFirstSuccess(sbMaps.rough, false);
+
+    // 3. Apply to checked meshes — following App.tsx logic exactly
+    baseColorHex = item.hex || '#ffffff';
+    const baseColor = new THREE.Color(item.hex || '#ffffff');
+
+    meshEntries.forEach(entry => {
+      if(!entry.checked) return;
+      const mat = entry.greyMat;
+
+      // Physics-based repeat: scale by mesh size so fabric tiles at same density.
+      // App.tsx: physRepeat = scl * (entry.uvScaleFactor / BASE_TILE)
+      const physRepeat = sScale * (entry.uvScaleFactor / BASE_TILE);
+
+      // Start with white color (App.tsx: mat.color.setRGB(1, 1, 1))
+      mat.color.setRGB(1,1,1);
+      mat.map = null;
+
+      if(diffTex) {
+        // Vendor image loaded — use as diffuse map with white × brightness tint
+        // App.tsx pattern: clone, set repeat, assign as map
+        const dt = diffTex.clone();
+        dt.wrapS = dt.wrapT = THREE.RepeatWrapping;
+        dt.repeat.set(physRepeat, physRepeat);
+        dt.needsUpdate = true;
+        mat.map = dt;
+        mat.color.setRGB(sBrightness, sBrightness, sBrightness);
+      } else if(item.hex) {
+        // No image loaded but hex color available — solid color mode
+        // App.tsx applyBaseColor: mat.map = null, color.copy(hex).multiplyScalar(brightness)
+        mat.map = null;
+        mat.color.copy(baseColor).multiplyScalar(Math.max(0.01, sBrightness));
+      } else {
+        // No image, no hex — use neutral grey (should not happen with good data)
+        mat.map = null;
+        mat.color.setRGB(0.83 * sBrightness, 0.82 * sBrightness, 0.80 * sBrightness);
+      }
+
+      // Normal + Roughness maps always use physics repeat
+      if(normTex) {
+        const nt = normTex.clone();
+        nt.wrapS = nt.wrapT = THREE.RepeatWrapping;
+        nt.repeat.set(physRepeat, physRepeat);
+        nt.needsUpdate = true;
+        mat.normalMap = nt;
+        mat.normalScale.set(sNorm, sNorm);
+      } else { mat.normalMap = null; }
+
+      if(roughTex) {
+        const rt = roughTex.clone();
+        rt.wrapS = rt.wrapT = THREE.RepeatWrapping;
+        rt.repeat.set(physRepeat, physRepeat);
+        rt.needsUpdate = true;
+        mat.roughnessMap = rt;
+      } else { mat.roughnessMap = null; }
+
+      mat.roughness  = sRoughness;
+      mat.metalness  = sMetalness;
+      mat.sheen      = sSheen;
+      mat.needsUpdate = true;
+
+      // Re-assign mesh.material so Three.js detects the change (App.tsx pattern)
+      if(Array.isArray(entry.mesh.material)) {
+        const arr = [...entry.mesh.material];
+        arr[entry.matIndex] = mat;
+        entry.mesh.material = arr;
+      }
+    });
+
+    markDirty();
+    showToast(item.name + ' applied!');
+  } catch(e) {
+    console.error(e);
+    showToast('Failed to apply material');
+  } finally {
+    document.getElementById('loading').classList.remove('on');
+  }
+}
+
+// ── Slider handlers ───────────────────────────────────────────────────────
+function updateBrightness(val) {
+  sBrightness = val;
+  document.getElementById('v-brightness').textContent = val.toFixed(2);
+  meshEntries.forEach(entry => {
+    if(!entry.checked) return;
+    const mat = entry.greyMat;
+    // App.tsx pattern: if texture map exists, tint white × brightness;
+    // if no map (solid color mode), tint baseColorHex × brightness.
+    const safeVal = Math.max(0.01, val);
+    if(mat.map) {
+      mat.color.setRGB(safeVal, safeVal, safeVal);
+    } else {
+      const c = new THREE.Color(baseColorHex || '#ffffff');
+      mat.color.copy(c).multiplyScalar(safeVal);
+    }
+    mat.needsUpdate = true;
+  });
+  markDirty();
+}
+
+function applyProp(prop, val) {
+  const valEl = document.getElementById('v-'+prop);
+  if(valEl) valEl.textContent = val.toFixed(2);
+  if(prop==='roughness') sRoughness=val;
+  if(prop==='metalness') sMetalness=val;
+  if(prop==='sheen')     sSheen=val;
+  meshEntries.forEach(entry => {
+    if(!entry.checked) return;
+    if(prop==='sheen') entry.greyMat.sheen = val;
+    else entry.greyMat[prop] = val;
+    entry.greyMat.needsUpdate = true;
+  });
+  markDirty();
+}
+
+function updateTexScale(val) {
+  sScale = val;
+  document.getElementById('v-scale').textContent = val.toFixed(1);
+  meshEntries.forEach(entry => {
+    if(!entry.checked) return;
+    const physRepeat = val * (entry.uvScaleFactor / BASE_TILE);
+    const mat = entry.greyMat;
+    if(mat.map && mat.map !== entry.origGreyscaleMap) { mat.map.repeat.set(physRepeat,physRepeat); mat.map.needsUpdate=true; }
+    if(mat.normalMap)    { mat.normalMap.repeat.set(physRepeat,physRepeat);    mat.normalMap.needsUpdate=true; }
+    if(mat.roughnessMap) { mat.roughnessMap.repeat.set(physRepeat,physRepeat); mat.roughnessMap.needsUpdate=true; }
+    mat.needsUpdate = true;
+  });
+  markDirty();
+}
+
+function updateNormScale(val) {
+  sNorm = val;
+  document.getElementById('v-norm').textContent = val.toFixed(1);
+  meshEntries.forEach(entry => {
+    if(!entry.checked) return;
+    if(entry.greyMat.normalMap) {
+      entry.greyMat.normalScale.set(val,val);
+      entry.greyMat.needsUpdate = true;
+    }
+  });
+  markDirty();
+}
+
+// ── Mesh list ─────────────────────────────────────────────────────────────
+const dotColors = ['#c84040','#c87840','#c8c840','#40c870','#4070c8','#8040c8','#c84080','#408080'];
+function buildMeshList() {
+  const list = document.getElementById('mesh-list');
+  list.innerHTML = '';
+  if(!meshEntries.length) { list.innerHTML='<div style="font-size:11px;color:var(--text-muted)">No parts found</div>'; return; }
+
+  const nameCounts = {};
+  const nameIdx = {};
+  meshEntries.forEach(e=>{ nameCounts[e.name]=(nameCounts[e.name]||0)+1; });
+
+  meshEntries.forEach((entry,i) => {
+    // Disambiguate duplicate names
+    let displayName = entry.name;
+    if(nameCounts[entry.name]>1) { nameIdx[entry.name]=(nameIdx[entry.name]||0)+1; displayName=entry.name+' '+nameIdx[entry.name]; }
+    entry.displayName = displayName;
+
+    const dot = dotColors[i % dotColors.length];
+    const row = document.createElement('label');
+    row.className = 'mesh-item' + (entry.checked?' sel':'');
+
+    const cb = document.createElement('input');
+    cb.type='checkbox'; cb.checked=entry.checked;
+    cb.addEventListener('change',()=>toggleCheck(entry.id, cb.checked));
+
+    const dotEl = document.createElement('div');
+    dotEl.className='mesh-dot'; dotEl.style.backgroundColor=dot;
+
+    const txt = document.createElement('span');
+    txt.textContent = displayName;
+
+    // Hover highlight (from App.tsx)
+    row.addEventListener('mouseenter',()=>{
+      entry.greyMat.emissive = new THREE.Color(0x444400);
+      entry.greyMat.emissiveIntensity = 0.25;
+      entry.greyMat.needsUpdate = true;
+      if(!entry.checked) {
+        const o = entry.origMat;
+        if(o.emissive!==undefined){ o._prevEmissive=o.emissive.clone(); o.emissive=new THREE.Color(0x444400); o.emissiveIntensity=0.25; o.needsUpdate=true; }
+      }
+      markDirty();
+    });
+    row.addEventListener('mouseleave',()=>{
+      entry.greyMat.emissive = new THREE.Color(0x000000);
+      entry.greyMat.emissiveIntensity = 0;
+      entry.greyMat.needsUpdate = true;
+      if(!entry.checked) {
+        const o = entry.origMat;
+        if(o._prevEmissive!==undefined){ o.emissive=o._prevEmissive; o.emissiveIntensity=0; o.needsUpdate=true; }
+      }
+      markDirty();
+    });
+
+    row.appendChild(cb); row.appendChild(dotEl); row.appendChild(txt);
+    list.appendChild(row);
+  });
+}
+
+function toggleCheck(id, checked) {
+  meshEntries = meshEntries.map(entry => {
+    if(entry.id !== id) return entry;
+    const ne = {...entry, checked};
+    const matArr = Array.isArray(ne.mesh.material) ? [...ne.mesh.material] : [ne.mesh.material];
+    if(ne.matIndex>=0 && ne.matIndex<matArr.length) {
+      matArr[ne.matIndex] = checked ? ne.greyMat : ne.origMat;
+      ne.mesh.material = matArr;
+    }
+    // Flash emissive (App.tsx pattern)
+    if(checked) {
+      ne.greyMat.emissive = new THREE.Color(0x666600);
+      ne.greyMat.emissiveIntensity = 0.3;
+      ne.greyMat.needsUpdate = true;
+      setTimeout(()=>{ ne.greyMat.emissive=new THREE.Color(0); ne.greyMat.emissiveIntensity=0; ne.greyMat.needsUpdate=true; markDirty(); }, 600);
+    }
+    return ne;
+  });
+  buildMeshList();
+  markDirty();
+}
+
+function selectAll() {
+  meshEntries.forEach(entry => {
+    entry.checked = true;
+    const matArr = Array.isArray(entry.mesh.material)?[...entry.mesh.material]:[entry.mesh.material];
+    if(entry.matIndex>=0&&entry.matIndex<matArr.length){ matArr[entry.matIndex]=entry.greyMat; entry.mesh.material=matArr; }
+  });
+  buildMeshList(); markDirty();
+}
+function deselectAll() {
+  meshEntries.forEach(entry => {
+    entry.checked = false;
+    const matArr = Array.isArray(entry.mesh.material)?[...entry.mesh.material]:[entry.mesh.material];
+    if(entry.matIndex>=0&&entry.matIndex<matArr.length){ matArr[entry.matIndex]=entry.origMat; entry.mesh.material=matArr; }
+  });
+  buildMeshList(); markDirty();
+}
+
+// ── GLB Processing (from App.tsx exactly) ─────────────────────────────────
+function processGLTF(gltf) {
+  try {
+    if(currentModel) scene.remove(currentModel);
+    currentModel = gltf.scene;
+
+    // Scale & center
+    const box = new THREE.Box3().setFromObject(currentModel);
+    const sz = box.getSize(new THREE.Vector3());
+    const sc = 1.6 / Math.max(sz.x,sz.y,sz.z);
+    currentModel.scale.setScalar(sc);
+    const box2 = new THREE.Box3().setFromObject(currentModel);
+    const ctr = box2.getCenter(new THREE.Vector3());
+    currentModel.position.sub(ctr);
+    currentModel.updateMatrixWorld(true);
+    scene.add(currentModel);
+
+    const worldBox = new THREE.Box3().setFromObject(currentModel);
+    const worldCenter = worldBox.getCenter(new THREE.Vector3());
+    const worldSize = worldBox.getSize(new THREE.Vector3());
+
+    const newEntries = [];
+    let meshCounter = 0;
+
+    currentModel.traverse(child => {
+      if(!child.isMesh) return;
+      const mesh = child;
+
+      // Normalize materials to array (App.tsx pattern)
+      let materials;
+      if(!Array.isArray(mesh.material)) {
+        materials = mesh.material ? [mesh.material] : [new THREE.MeshStandardMaterial({color:0xcccccc})];
+        if(mesh.geometry.groups.length===0) {
+          const count = mesh.geometry.index ? mesh.geometry.index.count : mesh.geometry.attributes.position.count;
+          mesh.geometry.addGroup(0,count,0);
+        }
+      } else {
+        materials = mesh.material;
+      }
+      mesh.material = materials;
+
+      materials.forEach((origMat, index) => {
+        if(!origMat) origMat = new THREE.MeshStandardMaterial({color:0xcccccc});
+
+        // Clone origMat — preserve shader type (App.tsx critical comment)
+        const greyMat = origMat.clone();
+        greyMat.onBeforeCompile = ()=>{};
+        greyMat.customProgramCacheKey = ()=>greyMat.uuid;
+
+        // Clear all maps, set grey base
+        greyMat.color.set(0xd4d0cc);
+        greyMat.map=null; greyMat.normalMap=null; greyMat.roughnessMap=null; greyMat.metalnessMap=null;
+        if(greyMat.emissiveMap!==undefined)  greyMat.emissiveMap=null;
+        if(greyMat.aoMap!==undefined)        greyMat.aoMap=null;
+        if(greyMat.alphaMap!==undefined)     greyMat.alphaMap=null;
+        if(greyMat.bumpMap!==undefined)      greyMat.bumpMap=null;
+        greyMat.transparent=false; greyMat.opacity=1.0; greyMat.alphaTest=0;
+        greyMat.depthWrite=true; greyMat.visible=true; greyMat.side=THREE.DoubleSide;
+        greyMat.roughness=0.75; greyMat.metalness=0.0;
+        if(greyMat.emissive)            greyMat.emissive.set(0x000000);
+        if(greyMat.emissiveIntensity!==undefined) greyMat.emissiveIntensity=0;
+        if(greyMat.sheen!==undefined)   greyMat.sheen=0;
+        if(greyMat.clearcoat!==undefined) greyMat.clearcoat=0;
+        if(greyMat.transmission!==undefined) greyMat.transmission=0;
+
+        // Apply greyscale diffuse from original (App.tsx pattern)
+        let origGreyscaleMap = null;
+        if(origMat.map) {
+          origGreyscaleMap = makeGreyscaleTex(origMat.map);
+          if(origGreyscaleMap) greyMat.map = origGreyscaleMap;
+        }
+        greyMat.needsUpdate = true;
+
+        // ── Mesh naming (App.tsx heuristics) ─────────────────────────────
+        const KNOWN = {'wooden frame':'Wooden Frame','seat cushion':'Seat Cushion','back cushion':'Back Cushion'};
+        let cleanName = '';
+        let _n = mesh;
+        while(_n){ const k=(_n.name||'').trim().toLowerCase(); if(KNOWN[k]){cleanName=KNOWN[k];break;} _n=_n.parent; }
+
+        mesh.geometry.computeBoundingBox();
+        const meshBox = new THREE.Box3().setFromObject(mesh);
+        const mc = meshBox.getCenter(new THREE.Vector3());
+        const ms = meshBox.getSize(new THREE.Vector3());
+        const wc=worldCenter, ws=worldSize;
+        const relY=(mc.y-wc.y)/(ws.y*0.5), relZ=(mc.z-wc.z)/(ws.z*0.5), relX=(mc.x-wc.x)/(ws.x*0.5);
+        const absX=Math.abs(relX);
+        const dims=[ms.x,ms.y,ms.z].sort((a,b)=>a-b);
+        const flatness=dims[2]>0?dims[0]/dims[2]:1;
+        const meshVol=ms.x*ms.y*ms.z, worldVol=ws.x*ws.y*ws.z, volRatio=worldVol>0?meshVol/worldVol:0;
+
+        if(cleanName){}
+        else if(relY<-0.55) cleanName='Legs / Base';
+        else if(relZ<-0.35&&relY>-0.3) cleanName='Backrest';
+        else if(absX>0.55&&relY>-0.4) cleanName=relX>0?'Right Armrest':'Left Armrest';
+        else if(relZ>0.0&&relY>-0.3&&relY<0.4&&absX<0.5) cleanName='Seat Cushion';
+        else if(flatness<0.06||volRatio<0.0008) cleanName='Stitching';
+        else if(relY<-0.35&&volRatio<0.02) cleanName='Legs / Base';
+        else if(volRatio>0.12) cleanName='Main Body';
+        else if(relY>-0.1&&relY<0.55&&absX<0.55) cleanName='Body Panel';
+        else cleanName='Frame';
+
+        const maxDim = Math.max(ms.x,ms.y,ms.z);
+        const uvScaleFactor = maxDim>0?maxDim:1;
+
+        newEntries.push({ id:`m-${meshCounter}-${index}`, name:cleanName, mesh, matIndex:index, origMat, greyMat, origGreyscaleMap, checked:false, uvScaleFactor });
+        meshCounter++;
+      });
+    });
+
+    // Disambiguate names in state
+    const nameCounts={};
+    newEntries.forEach(e=>{ nameCounts[e.name]=(nameCounts[e.name]||0)+1; });
+    meshEntries = newEntries;
+
+    buildMeshList();
+    sph={theta:0.4,phi:1.15,r:2.2}; tgt.set(0,0,0); camUpdate();
+    markDirty();
+    document.getElementById('loading').classList.remove('on');
+    document.getElementById('v-hint').style.display='flex';
+
+    // Reset sliders
+    setSliderVal('brightness',1); setSliderVal('roughness',0.72); setSliderVal('metalness',0);
+    setSliderVal('sheen',0,2); setSliderVal('scale',10,1); setSliderVal('norm',1,1);
+  } catch(e) {
+    console.error('processGLTF error:', e);
+    document.getElementById('loading').classList.remove('on');
+    showToast('Model load failed: '+e.message);
+  }
+}
+
+// ── Load model by URL ──────────────────────────────────────────────────────
+function loadModel(url) {
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('load-txt').textContent = 'Loading Model…';
+  document.getElementById('v-hint').style.display='none';
+  meshEntries = [];
+  if(activeBtnEl){ activeBtnEl.classList.remove('active'); activeBtnEl=null; }
+  document.getElementById('app-name').textContent='— none —';
+  document.getElementById('app-vend').textContent='';
+  document.getElementById('app-sw').innerHTML='';
+  document.getElementById('app-sw').style.background='var(--border)';
+
+  gltfLoader.load(url, gltf => processGLTF(gltf), undefined, err => {
+    console.error(err);
+    document.getElementById('loading').classList.remove('on');
+    showToast('Failed to load model');
+  });
+}
+
+// ── Model switch ──────────────────────────────────────────────────────────
+function switchModel(key) {
+  currentModelKey = key;
+  document.getElementById('tab-chair').classList.toggle('active', key==='chair');
+  document.getElementById('tab-sofa').classList.toggle('active',  key==='sofa');
+  document.getElementById('lib-title').textContent = key==='chair'?'Chair Fabrics':'Sofa Fabrics';
+  document.getElementById('lib-sub').textContent   = key==='chair'?'MityLite Sierra Collection':'Douglass & Ennis Fabrics';
+  buildLibrary();
+  loadModel(key==='chair' ? CHAIR_GLB : SOFA_GLB);
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────
+function resetAll() {
+  deselectAll();
+  if(activeBtnEl){ activeBtnEl.classList.remove('active'); activeBtnEl=null; }
+  document.getElementById('app-name').textContent='— none —';
+  document.getElementById('app-vend').textContent='';
+  document.getElementById('app-sw').innerHTML='';
+  document.getElementById('app-sw').style.background='var(--border)';
+  showToast('Reset');
+}
+
+// ── Build fabric library UI ───────────────────────────────────────────────
+function buildLibrary() {
+  const scroll = document.getElementById('fab-scroll');
+  scroll.innerHTML = '';
+  const groups = LIBRARY[currentModelKey];
+  groups.forEach((group, gi) => {
+    const gEl = document.createElement('div');
+    gEl.className = 'p-group';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'p-group-hdr';
+    hdr.innerHTML = `
+      <div>
+        <div class="p-name">${group.group}</div>
+        <div style="margin-top:3px"><span class="vbadge ${group.vclass}">${group.vendor}</span></div>
+      </div>
+      <div class="p-arrow">▾</div>`;
+    hdr.onclick = () => gEl.classList.toggle('collapsed');
+
+    const swGrid = document.createElement('div');
+    swGrid.className = 'p-swatches';
+
+    group.items.forEach((item, ii) => {
+      const btn = document.createElement('div');
+      btn.className = 'sw-btn';
+      btn.dataset.gi = gi;
+      btn.dataset.ii = ii;
+
+      const tip = document.createElement('div');
+      tip.className = 'sw-tip';
+      tip.textContent = item.name;
+
+      if(item.img) {
+        const img = document.createElement('img');
+        img.src = item.img;
+        img.alt = item.name;
+        img.loading = 'lazy';
+        img.onerror = () => {
+          img.remove();
+          const cd = document.createElement('div');
+          cd.className='sw-color'; cd.style.background=item.hex;
+          btn.insertBefore(cd, tip);
+        };
+        btn.appendChild(img);
+      } else if(item.code) {
+        // MityLite: try their CDN image, fallback to hex
+        const img = document.createElement('img');
+        img.src = MITY_IMG + item.code + '.jpg';
+        img.alt = item.name;
+        img.loading = 'lazy';
+        img.onerror = () => {
+          img.remove();
+          const cd = document.createElement('div');
+          cd.className='sw-color'; cd.style.background=item.hex;
+          btn.insertBefore(cd, tip);
+        };
+        btn.appendChild(img);
+      } else {
+        const cd = document.createElement('div');
+        cd.className='sw-color'; cd.style.background=item.hex;
+        btn.appendChild(cd);
+      }
+
+      btn.appendChild(tip);
+      btn.addEventListener('click', () => applySwatch(gi, ii, btn));
+      swGrid.appendChild(btn);
+    });
+
+    gEl.appendChild(hdr);
+    gEl.appendChild(swGrid);
+    scroll.appendChild(gEl);
+  });
+}
+
+// ── AI Render Scene ──────────────────────────────────────────────────────
+async function renderScene() {
+  if(!currentModel) { showToast('Load a model first!'); return; }
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('load-txt').textContent = 'Capturing Scene…';
+  try {
+    renderer.render(scene, camera);
+    await new Promise(r => setTimeout(r, 50));
+    const dataUrl = renderer.domElement.toDataURL('image/jpeg', 0.92);
+    let apiAvailable = false;
+    try { const probe = await fetch('/api/generate', { method: 'HEAD' }); apiAvailable = probe.status !== 404; } catch (_) {}
+    if(!apiAvailable) { showToast('Deploy to Vercel to enable AI Rendering'); showRenderedImage(dataUrl, true); return; }
+    document.getElementById('load-txt').textContent = 'Rendering in Living Room…';
+    const response = await fetch('/api/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageData: dataUrl.split(',')[1] }),
+      signal: AbortSignal.timeout(60000)
+    });
+    if(!response.ok) { showToast('Error generating render.'); return; }
+    const result = await response.json();
+    if(result.imageUrl) showRenderedImage(result.imageUrl, false);
+    else showToast('Failed to generate image.');
+  } catch(e) { console.error('Render error:', e); showToast('Error generating render.'); }
+  finally { document.getElementById('loading').classList.remove('on'); }
+}
+function showRenderedImage(imageUrl, isLocal) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px)';
+  const md = document.createElement('div');
+  md.style.cssText = 'background:#fff;border-radius:8px;overflow:hidden;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column';
+  const hd = document.createElement('div');
+  hd.style.cssText = 'padding:14px 20px;border-bottom:1px solid #ebebeb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
+  const ti = document.createElement('h2');
+  ti.textContent = isLocal ? 'Scene Preview' : 'AI Render';
+  ti.style.cssText = 'margin:0;font-size:15px;font-weight:600;color:#111;font-family:var(--font-d)';
+  const cb = document.createElement('button');
+  cb.textContent = '×'; cb.style.cssText = 'background:none;border:none;font-size:24px;cursor:pointer;color:#888;padding:0'; cb.onclick = () => document.body.removeChild(ov);
+  const iw = document.createElement('div');
+  iw.style.cssText = 'padding:16px;display:flex;justify-content:center;overflow:auto;flex:1';
+  const im = document.createElement('img');
+  im.src = imageUrl; im.style.cssText = 'max-width:100%;max-height:70vh;object-fit:contain;border-radius:4px';
+  const ft = document.createElement('div');
+  ft.style.cssText = 'padding:14px 20px;border-top:1px solid #ebebeb;display:flex;justify-content:flex-end;align-items:center;flex-shrink:0';
+  const dl = document.createElement('a');
+  dl.href = imageUrl; dl.download = isLocal ? 'preview.png' : 'render.png';
+  dl.style.cssText = 'background:var(--accent);color:#fff;padding:9px 20px;border-radius:var(--r);text-decoration:none;font-size:12px;font-family:var(--font-b)';
+  dl.textContent = isLocal ? 'Download Preview' : 'Download Render';
+  hd.appendChild(ti); hd.appendChild(cb); iw.appendChild(im); ft.appendChild(dl);
+  md.appendChild(hd); md.appendChild(iw); md.appendChild(ft); ov.appendChild(md);
+  ov.addEventListener('click', e => { if(e.target === ov) document.body.removeChild(ov); });
+  document.body.appendChild(ov);
+}
+
+// ── Export GLB ────────────────────────────────────────────────────────────
+async function exportGLB() {
+  if(!currentModel){ showToast('No model loaded'); return; }
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('load-txt').textContent = 'Exporting…';
+  try {
+    // Load exporter dynamically
+    if(!THREE.GLTFExporter) {
+      await new Promise((res,rej) => {
+        const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js';
+        s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+    }
+    const exporter = new THREE.GLTFExporter();
+    exporter.parse(currentModel, result => {
+      const blob = new Blob([result], {type:'application/octet-stream'});
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = currentModelKey+'_custom.glb';
+      link.click();
+      showToast('Exported!');
+    }, {binary:true});
+  } catch(e) {
+    showToast('Export failed: '+e.message);
+  } finally {
+    document.getElementById('loading').classList.remove('on');
+  }
+}
+
+// ── Three.js Init ──────────────────────────────────────────────────────────
+function camUpdate() {
+  camera.position.set(
+    tgt.x + sph.r*Math.sin(sph.phi)*Math.sin(sph.theta),
+    tgt.y + sph.r*Math.cos(sph.phi),
+    tgt.z + sph.r*Math.sin(sph.phi)*Math.cos(sph.theta)
+  );
+  camera.lookAt(tgt);
+  markDirty();
+}
+
+function initThree() {
+  const canvas = document.getElementById('viewer');
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, preserveDrawingBuffer:true});
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.physicallyCorrectLights = true;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(42,1,0.01,1000);
+
+  pmremGen = new THREE.PMREMGenerator(renderer);
+  pmremGen.compileEquirectangularShader();
+  scene.environment = pmremGen.fromScene(new THREE.RoomEnvironment(),0.04).texture;
+
+  const amb = new THREE.AmbientLight(0xffffff,0.5);
+  const dir = new THREE.DirectionalLight(0xfff8f0,2.5);
+  dir.position.set(3,5,4);
+  scene.add(amb,dir);
+
+  camUpdate();
+
+  // Orbit controls
+  let isDrag=false, isRight=false, prev={x:0,y:0};
+  canvas.addEventListener('mousedown',e=>{ isDrag=true; isRight=e.button===2; prev={x:e.clientX,y:e.clientY}; });
+  window.addEventListener('mousemove',e=>{
+    if(!isDrag) return;
+    const dx=e.clientX-prev.x, dy=e.clientY-prev.y;
+    prev={x:e.clientX,y:e.clientY};
+    if(isRight){
+      const spd=0.002*sph.r;
+      const right=new THREE.Vector3().crossVectors(camera.getWorldDirection(new THREE.Vector3()),camera.up).normalize();
+      tgt.addScaledVector(right,-dx*spd);
+      tgt.addScaledVector(camera.up,dy*spd);
+    } else {
+      sph.theta-=dx*0.007;
+      sph.phi=Math.max(0.1,Math.min(Math.PI-0.1,sph.phi-dy*0.007));
+    }
+    camUpdate();
+  });
+  window.addEventListener('mouseup',()=>isDrag=false);
+  canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  canvas.addEventListener('wheel',e=>{ sph.r=Math.max(0.3,Math.min(30,sph.r+e.deltaY*0.004)); camUpdate(); e.preventDefault(); },{passive:false});
+
+  // Resize
+  const ro = new ResizeObserver(()=>{
+    const w=canvas.clientWidth, h=canvas.clientHeight;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+    markDirty();
+  });
+  ro.observe(canvas);
+
+  // Render loop (dirty flag)
+  (function loop(){
+    requestAnimationFrame(loop);
+    if(!_dirty) return;
+    _dirty = false;
+    renderer.render(scene,camera);
+  })();
+
+  // GLTF loader
+  const dracoLoader = new THREE.DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+  gltfLoader = new THREE.GLTFLoader();
+  gltfLoader.setDRACOLoader(dracoLoader);
+}
+
+// ── Bootstrap: wait for GLTFLoader/RoomEnvironment scripts ────────────────
+function loadScripts(urls) {
+  return urls.reduce((p, url) => p.then(() => new Promise((res,rej) => {
+    const s = document.createElement('script');
+    s.src = url; s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  })), Promise.resolve());
+}
+
+loadScripts([
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js',
+]).then(()=>{
+  initThree();
+  buildLibrary();
+  loadModel(CHAIR_GLB);
+}).catch(e=>{ console.error('Script load failed',e); showToast('Failed to load Three.js loaders'); });
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "furniture-configurator-customer",
+  "version": "1.0.0",
+  "dependencies": {
+    "@google/genai": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
