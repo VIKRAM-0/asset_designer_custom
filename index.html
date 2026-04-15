@@ -955,15 +955,9 @@ function buildMeshList() {
   list.innerHTML = '';
   if(!meshEntries.length) { list.innerHTML='<div style="font-size:11px;color:var(--text-muted)">No parts found</div>'; return; }
 
-  const nameCounts = {};
-  const nameIdx = {};
-  meshEntries.forEach(e=>{ nameCounts[e.name]=(nameCounts[e.name]||0)+1; });
-
   meshEntries.forEach((entry,i) => {
-    // Disambiguate duplicate names
-    let displayName = entry.name;
-    if(nameCounts[entry.name]>1) { nameIdx[entry.name]=(nameIdx[entry.name]||0)+1; displayName=entry.name+' '+nameIdx[entry.name]; }
-    entry.displayName = displayName;
+    // Names are already finalised (disambiguated + remapped) in processGLTF
+    entry.displayName = entry.name;
 
     const dot = dotColors[i % dotColors.length];
     const row = document.createElement('label');
@@ -977,7 +971,7 @@ function buildMeshList() {
     dotEl.className='mesh-dot'; dotEl.style.backgroundColor=dot;
 
     const txt = document.createElement('span');
-    txt.textContent = displayName;
+    txt.textContent = entry.name;
 
     // Hover highlight (from App.tsx)
     row.addEventListener('mouseenter',()=>{
@@ -1154,9 +1148,38 @@ function processGLTF(gltf) {
       });
     });
 
-    // Disambiguate names in state
-    const nameCounts={};
-    newEntries.forEach(e=>{ nameCounts[e.name]=(nameCounts[e.name]||0)+1; });
+    // ── Rename duplicates then apply per-model display name maps ──────────
+    // Step 1: count occurrences to detect which are duplicated
+    const rawCounts = {};
+    newEntries.forEach(e => { rawCounts[e.name] = (rawCounts[e.name]||0)+1; });
+    const rawIdx = {};
+    newEntries.forEach(e => {
+      if(rawCounts[e.name] > 1) {
+        rawIdx[e.name] = (rawIdx[e.name]||0)+1;
+        e.name = e.name + ' ' + rawIdx[e.name]; // e.g. "Main Body 1", "Main Body 2"
+      }
+    });
+
+    // Step 2: per-model rename maps  (heuristic name → desired display name)
+    // Chair:  Backrest = Backrest | Main Body 1 = Seat Cushion | Main Body 2 = Armrest & Legs
+    // Sofa:   Main Body 1 = Sofa Frame | Main Body 2 = Decorative Cushion | Seat Cushion = Sofa Seat
+    const RENAME = {
+      chair: {
+        'Backrest':    'Backrest',
+        'Main Body 1': 'Seat Cushion',
+        'Main Body 2': 'Armrest & Legs',
+      },
+      sofa: {
+        'Main Body 1':   'Sofa Frame',
+        'Main Body 2':   'Decorative Cushion',
+        'Seat Cushion':  'Sofa Seat',
+      },
+    };
+    const remap = RENAME[currentModelKey] || {};
+    newEntries.forEach(e => {
+      if(remap[e.name]) e.name = remap[e.name];
+    });
+
     meshEntries = newEntries;
 
     buildMeshList();
