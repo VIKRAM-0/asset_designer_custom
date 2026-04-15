@@ -258,8 +258,8 @@ const SUPABASE_MAPS = {
              rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
   leather: { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
              rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
-  wood:    { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
-             rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
+  wood:    { norm: [SB+'wood_texture/Normal.jpg'],
+             rough:[SB+'wood_texture/Roughness.jpg'] },
 };
 
 // Try each URL in the array until one loads successfully —
@@ -678,31 +678,54 @@ async function applySwatch(gi, ii, btnEl) {
   setSliderVal('brightness',1.00); setSliderVal('roughness',def.roughness); setSliderVal('metalness',0);
   setSliderVal('sheen',def.sheen,2); setSliderVal('scale',def.scale,1); setSliderVal('norm',def.norm,1);
 
-  // ── WOOD: keep original texture, just tint color ──────────────────────
+  // ── WOOD: tint with hex colour + wood_texture normal & roughness maps ──
   if(item.type === 'wood') {
-    const tintColor = new THREE.Color(item.hex);
-    meshEntries.forEach(entry => {
-      if(!entry.checked) return;
-      const mat = entry.greyMat;
-      // Restore original maps (wood grain)
-      mat.map = entry.origMat.map || null;
-      mat.normalMap = entry.origMat.normalMap || null;
-      mat.roughnessMap = entry.origMat.roughnessMap || null;
-      // Tint with wood hex
-      mat.color.copy(tintColor).multiplyScalar(Math.max(0.01, sBrightness));
-      mat.roughness = sRoughness;
-      mat.metalness = sMetalness;
-      mat.sheen = sSheen;
-      if(mat.normalMap) mat.normalScale.set(sNorm, sNorm);
-      mat.needsUpdate = true;
-      if(Array.isArray(entry.mesh.material)) {
-        const arr = [...entry.mesh.material];
-        arr[entry.matIndex] = mat;
-        entry.mesh.material = arr;
-      }
-    });
-    markDirty();
-    showToast(item.name + ' applied!');
+    document.getElementById('loading').classList.add('on');
+    document.getElementById('load-txt').textContent = 'Loading Texture\u2026';
+    try {
+      const woodMaps = SUPABASE_MAPS.wood;
+      const normTex  = await loadTexFirstSuccess(woodMaps.norm,  false);
+      const roughTex = await loadTexFirstSuccess(woodMaps.rough, false);
+      const tintColor = new THREE.Color(item.hex);
+      baseColorHex = item.hex;
+      meshEntries.forEach(entry => {
+        if(!entry.checked) return;
+        const mat = entry.greyMat;
+        const physRepeat = sScale * (entry.uvScaleFactor / BASE_TILE);
+        mat.map = null;
+        mat.color.copy(tintColor).multiplyScalar(Math.max(0.01, sBrightness));
+        if(normTex) {
+          const nt = normTex.clone();
+          nt.wrapS = nt.wrapT = THREE.RepeatWrapping;
+          nt.repeat.set(physRepeat, physRepeat);
+          nt.needsUpdate = true;
+          mat.normalMap = nt;
+          mat.normalScale.set(sNorm, sNorm);
+        } else { mat.normalMap = null; }
+        if(roughTex) {
+          const rt = roughTex.clone();
+          rt.wrapS = rt.wrapT = THREE.RepeatWrapping;
+          rt.repeat.set(physRepeat, physRepeat);
+          rt.needsUpdate = true;
+          mat.roughnessMap = rt;
+        } else { mat.roughnessMap = null; }
+        mat.roughness = sRoughness;
+        mat.metalness = sMetalness;
+        mat.sheen = sSheen;
+        mat.needsUpdate = true;
+        if(Array.isArray(entry.mesh.material)) {
+          const arr = [...entry.mesh.material];
+          arr[entry.matIndex] = mat;
+          entry.mesh.material = arr;
+        }
+      });
+      markDirty();
+      showToast(item.name + ' applied!');
+    } catch(e) {
+      showToast('Wood material failed: ' + e.message);
+    } finally {
+      document.getElementById('loading').classList.remove('on');
+    }
     return;
   }
 
