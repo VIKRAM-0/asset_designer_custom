@@ -274,15 +274,27 @@ function loadTexFirstSuccess(urls, srgb) {
 
 
 // ── MityLite Sierra Armchair — Faux Wood Finishes (8) ─────────────────────
+// Wood finish images must be hosted in Supabase to avoid CORS.
+// Upload these files to: fabric_assets/wood_texture/finishes/
+// Source URLs to download from (MityLite blocks cross-origin from Vercel):
+//   https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Ashwood.jpg   → Ashwood.jpg
+//   https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Cashew.jpg    → Cashew.jpg
+//   https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Cider.jpg     → Cider.jpg
+//   https://mitylite.com/wp-content/uploads/2024/08/ebony-faux-wood-300x300-1.jpg → Ebony.jpg
+//   https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Elmwood.jpg   → Elmwood.jpg
+//   https://mitylite.com/wp-content/uploads/2024/08/kona-faux-wood-300x300-1.jpg  → Kona.jpg
+//   https://mitylite.com/wp-content/uploads/2024/08/mink-faux-wood-300x300-1.jpg  → Mink.jpg
+//   https://mitylite.com/wp-content/uploads/2024/08/shoreline-faux-wood-300x300-1.jpg → Shoreline.jpg
+const WF = SB + 'wood_texture/custom/'; // Supabase wood finish folder
 const CHAIR_WOOD = [
-  { code:'ASHWOOD',   name:'Ashwood',   hex:'#c8a882', type:'wood', polyId:'oak_veneer_01',        img:'https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Ashwood.jpg' },
-  { code:'CASHEW',    name:'Cashew',    hex:'#b08d6b', type:'wood', polyId:'kitchen_wood',          img:'https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Cashew.jpg' },
-  { code:'CIDER',     name:'Cider',     hex:'#8b5e3c', type:'wood', polyId:'lacquered_cherry_wood', img:'https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Cider.jpg' },
-  { code:'EBONY',     name:'Ebony',     hex:'#2c1f14', type:'wood', polyId:'fine_grained_wood',     img:'https://mitylite.com/wp-content/uploads/2024/08/ebony-faux-wood-300x300-1.jpg' },
-  { code:'ELMWOOD',   name:'Elmwood',   hex:'#a07850', type:'wood', polyId:'wood_table_001',        img:'https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Elmwood.jpg' },
-  { code:'KONA',      name:'Kona',      hex:'#5c3a1e', type:'wood', polyId:'rosewood_veneer1',      img:'https://mitylite.com/wp-content/uploads/2024/08/kona-faux-wood-300x300-1.jpg' },
-  { code:'MINK',      name:'Mink',      hex:'#d0c0a8', type:'wood', polyId:'coated_pine',           img:'https://mitylite.com/wp-content/uploads/2024/08/mink-faux-wood-300x300-1.jpg' },
-  { code:'SHORELINE', name:'Shoreline', hex:'#6e5840', type:'wood', polyId:'synthetic_wood',        img:'https://mitylite.com/wp-content/uploads/2024/08/shoreline-faux-wood-300x300-1.jpg' },
+  { code:'ASHWOOD',   name:'Ashwood',   hex:'#c8a882', type:'wood', polyId:'oak_veneer_01',        img: WF+'Ashwood.jpg'   },
+  { code:'CASHEW',    name:'Cashew',    hex:'#b08d6b', type:'wood', polyId:'kitchen_wood',          img: WF+'Cashew.jpg'    },
+  { code:'CIDER',     name:'Cider',     hex:'#8b5e3c', type:'wood', polyId:'lacquered_cherry_wood', img: WF+'Cider.jpg'     },
+  { code:'EBONY',     name:'Ebony',     hex:'#2c1f14', type:'wood', polyId:'fine_grained_wood',     img: WF+'Ebony.jpg'     },
+  { code:'ELMWOOD',   name:'Elmwood',   hex:'#a07850', type:'wood', polyId:'wood_table_001',        img: WF+'Elmwood.jpg'   },
+  { code:'KONA',      name:'Kona',      hex:'#5c3a1e', type:'wood', polyId:'rosewood_veneer1',      img: WF+'Kona.jpg'      },
+  { code:'MINK',      name:'Mink',      hex:'#d0c0a8', type:'wood', polyId:'coated_pine',           img: WF+'Mink.jpg'      },
+  { code:'SHORELINE', name:'Shoreline', hex:'#6e5840', type:'wood', polyId:'synthetic_wood',        img: WF+'Shoreline.jpg' },
 ];
 
 // ── All 152 MityLite fabrics with real image URLs ─────────────────────────
@@ -623,17 +635,25 @@ function pickPolyUrl(files, keys) {
 }
 
 async function getPolyMaps(polyId) {
-  if(polyCache[polyId]) return polyCache[polyId];
+  if(polyCache[polyId]) {
+    console.log(`[Polyhaven] cache hit for "${polyId}"`, polyCache[polyId]);
+    return polyCache[polyId];
+  }
+  const url = POLY_API + polyId;
+  console.log(`[Polyhaven] fetching → ${url}`);
   try {
-    const res = await fetch(POLY_API + polyId);
-    if(!res.ok) throw new Error('API error');
+    const res = await fetch(url);
+    console.log(`[Polyhaven] response status: ${res.status} for "${polyId}"`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const files = await res.json();
+    console.log(`[Polyhaven] raw file keys for "${polyId}":`, Object.keys(files));
     const normUrl  = pickPolyUrl(files, POLY_NORM_KEYS);
     const roughUrl = pickPolyUrl(files, POLY_ROUGH_KEYS);
+    console.log(`[Polyhaven] resolved for "${polyId}" →`, { normUrl, roughUrl });
     polyCache[polyId] = { normUrl, roughUrl };
     return polyCache[polyId];
   } catch(e) {
-    console.warn('Polyhaven unavailable for', polyId, e);
+    console.warn(`[Polyhaven] FAILED for "${polyId}":`, e.message);
     polyCache[polyId] = { normUrl:null, roughUrl:null };
     return polyCache[polyId];
   }
@@ -685,18 +705,26 @@ async function applySwatch(gi, ii, btnEl) {
     try {
       // 1. Per-finish Polyhaven PBR maps (normal + roughness)
       const polyId = item.polyId || 'oak_veneer_01';
+      console.log(`[Wood] applying "${item.name}" | polyId: "${polyId}" | img: ${item.img}`);
       const { normUrl, roughUrl } = await getPolyMaps(polyId);
-      let normTex  = normUrl  ? await tryLoadTex(normUrl,  false).catch(()=>null) : null;
-      let roughTex = roughUrl ? await tryLoadTex(roughUrl, false).catch(()=>null) : null;
+      console.log(`[Wood] PBR URLs → norm: ${normUrl} | rough: ${roughUrl}`);
+
+      let normTex  = normUrl  ? await tryLoadTex(normUrl,  false).catch(e => { console.warn('[Wood] normTex load failed:', e.message); return null; }) : null;
+      let roughTex = roughUrl ? await tryLoadTex(roughUrl, false).catch(e => { console.warn('[Wood] roughTex load failed:', e.message); return null; }) : null;
+      console.log(`[Wood] Polyhaven textures loaded → normTex: ${!!normTex} | roughTex: ${!!roughTex}`);
+
       // Fallback to Supabase wood maps if Polyhaven fails
       if(!normTex || !roughTex) {
+        console.log('[Wood] falling back to Supabase wood_texture maps');
         const sbW = SUPABASE_MAPS.wood;
         if(!normTex)  normTex  = await loadTexFirstSuccess(sbW.norm,  false);
         if(!roughTex) roughTex = await loadTexFirstSuccess(sbW.rough, false);
+        console.log(`[Wood] after Supabase fallback → normTex: ${!!normTex} | roughTex: ${!!roughTex}`);
       }
 
       // 2. Diffuse = actual product photo, tiled like a fabric
-      const diffTex = item.img ? await tryLoadTex(item.img, true).catch(()=>null) : null;
+      const diffTex = item.img ? await tryLoadTex(item.img, true).catch(e => { console.warn('[Wood] diffTex load failed:', e.message); return null; }) : null;
+      console.log(`[Wood] diffTex loaded: ${!!diffTex} from ${item.img}`);
 
       baseColorHex = item.hex;
       meshEntries.forEach(entry => {
@@ -747,6 +775,7 @@ async function applySwatch(gi, ii, btnEl) {
         }
       });
       markDirty();
+      console.log(`[Wood] "${item.name}" applied to ${meshEntries.filter(e=>e.checked).length} mesh(es) ✓`);
       showToast(item.name + ' applied!');
     } catch(e) {
       showToast('Wood material failed: ' + e.message);
@@ -1224,10 +1253,11 @@ function buildLibrary() {
         img.src = item.img;
         img.alt = item.name;
         img.loading = 'lazy';
+        img.crossOrigin = 'anonymous';
         img.onerror = () => {
           img.remove();
           const cd = document.createElement('div');
-          cd.className='sw-color'; cd.style.background=item.hex;
+          cd.className='sw-color'; cd.style.background=item.hex||'#aaa';
           btn.insertBefore(cd, tip);
         };
         btn.appendChild(img);
@@ -1237,10 +1267,11 @@ function buildLibrary() {
         img.src = MITY_IMG + item.code + '.jpg';
         img.alt = item.name;
         img.loading = 'lazy';
+        img.crossOrigin = 'anonymous';
         img.onerror = () => {
           img.remove();
           const cd = document.createElement('div');
-          cd.className='sw-color'; cd.style.background=item.hex;
+          cd.className='sw-color'; cd.style.background=item.hex||'#aaa';
           btn.insertBefore(cd, tip);
         };
         btn.appendChild(img);
