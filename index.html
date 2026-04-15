@@ -275,14 +275,14 @@ function loadTexFirstSuccess(urls, srgb) {
 
 // ── MityLite Sierra Armchair — Faux Wood Finishes (8) ─────────────────────
 const CHAIR_WOOD = [
-  { code:'ASHWOOD',   name:'Ashwood',   hex:'#c8a882', type:'wood' },
-  { code:'CASHEW',    name:'Cashew',    hex:'#b08d6b', type:'wood' },
-  { code:'CIDER',     name:'Cider',     hex:'#8b5e3c', type:'wood' },
-  { code:'EBONY',     name:'Ebony',     hex:'#2c1f14', type:'wood' },
-  { code:'ELMWOOD',   name:'Elmwood',   hex:'#a07850', type:'wood' },
-  { code:'KONA',      name:'Kona',      hex:'#5c3a1e', type:'wood' },
-  { code:'MINK',      name:'Mink',      hex:'#d0c0a8', type:'wood' },
-  { code:'SHORELINE', name:'Shoreline', hex:'#6e5840', type:'wood' },
+  { code:'ASHWOOD',   name:'Ashwood',   hex:'#c8a882', type:'wood', polyId:'oak_veneer_01',        img:'https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Ashwood.jpg' },
+  { code:'CASHEW',    name:'Cashew',    hex:'#b08d6b', type:'wood', polyId:'kitchen_wood',          img:'https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Cashew.jpg' },
+  { code:'CIDER',     name:'Cider',     hex:'#8b5e3c', type:'wood', polyId:'lacquered_cherry_wood', img:'https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Cider.jpg' },
+  { code:'EBONY',     name:'Ebony',     hex:'#2c1f14', type:'wood', polyId:'fine_grained_wood',     img:'https://mitylite.com/wp-content/uploads/2024/08/ebony-faux-wood-300x300-1.jpg' },
+  { code:'ELMWOOD',   name:'Elmwood',   hex:'#a07850', type:'wood', polyId:'wood_table_001',        img:'https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Elmwood.jpg' },
+  { code:'KONA',      name:'Kona',      hex:'#5c3a1e', type:'wood', polyId:'rosewood_veneer1',      img:'https://mitylite.com/wp-content/uploads/2024/08/kona-faux-wood-300x300-1.jpg' },
+  { code:'MINK',      name:'Mink',      hex:'#d0c0a8', type:'wood', polyId:'coated_pine',           img:'https://mitylite.com/wp-content/uploads/2024/08/mink-faux-wood-300x300-1.jpg' },
+  { code:'SHORELINE', name:'Shoreline', hex:'#6e5840', type:'wood', polyId:'synthetic_wood',        img:'https://mitylite.com/wp-content/uploads/2024/08/shoreline-faux-wood-300x300-1.jpg' },
 ];
 
 // ── All 152 MityLite fabrics with real image URLs ─────────────────────────
@@ -678,22 +678,46 @@ async function applySwatch(gi, ii, btnEl) {
   setSliderVal('brightness',1.00); setSliderVal('roughness',def.roughness); setSliderVal('metalness',0);
   setSliderVal('sheen',def.sheen,2); setSliderVal('scale',def.scale,1); setSliderVal('norm',def.norm,1);
 
-  // ── WOOD: tint with hex colour + wood_texture normal & roughness maps ──
+  // ── WOOD: product image as tiled diffuse + per-finish Polyhaven normal & roughness ──
   if(item.type === 'wood') {
     document.getElementById('loading').classList.add('on');
     document.getElementById('load-txt').textContent = 'Loading Texture\u2026';
     try {
-      const woodMaps = SUPABASE_MAPS.wood;
-      const normTex  = await loadTexFirstSuccess(woodMaps.norm,  false);
-      const roughTex = await loadTexFirstSuccess(woodMaps.rough, false);
-      const tintColor = new THREE.Color(item.hex);
+      // 1. Per-finish Polyhaven PBR maps (normal + roughness)
+      const polyId = item.polyId || 'oak_veneer_01';
+      const { normUrl, roughUrl } = await getPolyMaps(polyId);
+      let normTex  = normUrl  ? await tryLoadTex(normUrl,  false).catch(()=>null) : null;
+      let roughTex = roughUrl ? await tryLoadTex(roughUrl, false).catch(()=>null) : null;
+      // Fallback to Supabase wood maps if Polyhaven fails
+      if(!normTex || !roughTex) {
+        const sbW = SUPABASE_MAPS.wood;
+        if(!normTex)  normTex  = await loadTexFirstSuccess(sbW.norm,  false);
+        if(!roughTex) roughTex = await loadTexFirstSuccess(sbW.rough, false);
+      }
+
+      // 2. Diffuse = actual product photo, tiled like a fabric
+      const diffTex = item.img ? await tryLoadTex(item.img, true).catch(()=>null) : null;
+
       baseColorHex = item.hex;
       meshEntries.forEach(entry => {
         if(!entry.checked) return;
         const mat = entry.greyMat;
         const physRepeat = sScale * (entry.uvScaleFactor / BASE_TILE);
-        mat.map = null;
-        mat.color.copy(tintColor).multiplyScalar(Math.max(0.01, sBrightness));
+
+        // Diffuse: tile the product photo so it wraps the surface with grain
+        if(diffTex) {
+          const dt = diffTex.clone();
+          dt.wrapS = dt.wrapT = THREE.RepeatWrapping;
+          dt.repeat.set(physRepeat, physRepeat);
+          dt.needsUpdate = true;
+          mat.map = dt;
+          mat.color.setRGB(Math.max(0.01, sBrightness), Math.max(0.01, sBrightness), Math.max(0.01, sBrightness));
+        } else {
+          mat.map = null;
+          mat.color.copy(new THREE.Color(item.hex)).multiplyScalar(Math.max(0.01, sBrightness));
+        }
+
+        // Normal map
         if(normTex) {
           const nt = normTex.clone();
           nt.wrapS = nt.wrapT = THREE.RepeatWrapping;
@@ -702,6 +726,8 @@ async function applySwatch(gi, ii, btnEl) {
           mat.normalMap = nt;
           mat.normalScale.set(sNorm, sNorm);
         } else { mat.normalMap = null; }
+
+        // Roughness map
         if(roughTex) {
           const rt = roughTex.clone();
           rt.wrapS = rt.wrapT = THREE.RepeatWrapping;
@@ -709,6 +735,7 @@ async function applySwatch(gi, ii, btnEl) {
           rt.needsUpdate = true;
           mat.roughnessMap = rt;
         } else { mat.roughnessMap = null; }
+
         mat.roughness = sRoughness;
         mat.metalness = sMetalness;
         mat.sheen = sSheen;
