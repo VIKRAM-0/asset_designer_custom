@@ -34,6 +34,9 @@ header{height:56px;padding:0 24px;display:flex;align-items:center;justify-conten
 .btn-export:hover{background:var(--accent-light)}
 .btn-render{padding:8px 18px;font-family:var(--font-b);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:var(--accent-pale);border:1px solid var(--accent);border-radius:var(--r);cursor:pointer;transition:all .2s ease}
 .btn-render:hover{background:var(--accent);color:#fff}
+.btn-room{padding:8px 18px;font-family:var(--font-b);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--warm);background:#fdf7ef;border:1px solid var(--warm-light);border-radius:var(--r);cursor:pointer;transition:all .2s ease}
+.btn-room:hover{background:var(--warm);color:#fff}
+.btn-room.active-view{background:var(--warm);color:#fff}
 
 /* LAYOUT */
 .main{display:flex;flex:1;overflow:hidden}
@@ -59,13 +62,21 @@ header{height:56px;padding:0 24px;display:flex;align-items:center;justify-conten
 .p-group.collapsed .p-swatches{display:none}
 
 /* SWATCHES */
-.sw-btn{aspect-ratio:1;border-radius:4px;border:2px solid transparent;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,border-color .15s;background:var(--bg);flex-shrink:0}
+.sw-btn{aspect-ratio:1;border-radius:4px;border:2px solid transparent;cursor:grab;position:relative;overflow:hidden;transition:transform .15s,border-color .15s;background:var(--bg);flex-shrink:0}
 .sw-btn:hover{transform:scale(1.1);border-color:var(--border-strong)}
 .sw-btn.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.sw-btn:active{cursor:grabbing}
 .sw-btn img{width:100%;height:100%;object-fit:cover;display:block;border-radius:2px;pointer-events:none}
 .sw-color{width:100%;height:100%;border-radius:2px}
 .sw-tip{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:9px;white-space:nowrap;padding:2px 6px;border-radius:3px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100}
 .sw-btn:hover .sw-tip{opacity:1}
+
+/* DRAG GHOST */
+#drag-ghost{position:fixed;width:48px;height:48px;border-radius:6px;border:2px solid var(--accent);box-shadow:0 4px 20px rgba(0,0,0,.25);pointer-events:none;z-index:9999;display:none;overflow:hidden;transform:translate(-50%,-50%)}
+#drag-ghost img{width:100%;height:100%;object-fit:cover}
+
+/* Drop zone highlight on canvas */
+.viewport-wrap.drag-over canvas{outline:2px solid var(--accent);outline-offset:-2px}
 
 /* VENDOR BADGE */
 .vbadge{display:inline-block;font-size:9px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:2px;border:1px solid var(--border);background:var(--bg);color:var(--text-muted)}
@@ -80,6 +91,11 @@ header{height:56px;padding:0 24px;display:flex;align-items:center;justify-conten
 .v-hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:14px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:40px;padding:7px 18px;font-size:11px;color:var(--text-muted);pointer-events:none}
 .v-hint span{display:flex;align-items:center;gap:5px}
 .h-key{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:0 5px;font-size:9px;color:var(--text-mid)}
+
+/* Drop hint */
+#drop-hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(45,74,62,.9);color:#fff;font-size:11px;letter-spacing:.04em;padding:6px 16px;border-radius:40px;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap;backdrop-filter:blur(4px)}
+#drop-hint.show{opacity:1}
+
 #loading{position:absolute;inset:0;background:rgba(245,242,238,.88);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;opacity:0;pointer-events:none;transition:opacity .3s}
 #loading.on{opacity:1;pointer-events:all}
 .spinner{width:30px;height:30px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
@@ -114,6 +130,21 @@ header{height:56px;padding:0 24px;display:flex;align-items:center;justify-conten
 input[type=range]{width:100%;appearance:none;height:3px;background:var(--border);border-radius:2px;outline:none}
 input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 0 2px #fff,0 0 0 3px var(--accent)}
 
+/* ROOM PANEL EXTRA */
+.room-controls{padding:14px 16px;border-bottom:1px solid var(--border)}
+.room-controls .r-sec-t{margin-bottom:8px}
+.room-row{display:flex;gap:6px;margin-bottom:8px}
+.room-chip{flex:1;padding:6px 0;font-size:10px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--border);background:transparent;color:var(--text-muted);border-radius:var(--r);cursor:pointer;transition:all .15s;text-align:center}
+.room-chip.on{background:var(--accent-pale);border-color:var(--accent);color:var(--accent)}
+.room-chip:hover:not(.on){border-color:var(--border-strong);color:var(--text)}
+.explode-slider .sl-lbl{margin-bottom:4px}
+
+/* FURNITURE PIECES panel in room mode */
+.piece-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;transition:all .15s;font-size:12px;color:var(--text-mid)}
+.piece-item:hover{background:var(--bg);border-color:var(--border)}
+.piece-item.sel-piece{background:var(--accent-pale);border-color:var(--accent);color:var(--text)}
+.piece-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
 /* TOAST */
 #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--text);color:#fff;font-size:12px;padding:9px 18px;border-radius:40px;white-space:nowrap;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
@@ -132,6 +163,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
   </div>
   <div class="header-right">
     <button class="btn-icon" title="Reset" onclick="resetAll()">↺</button>
+    <button class="btn-room" id="btn-room-view" onclick="toggleRoomView()">🏠 Room View</button>
     <button class="btn-render" onclick="renderScene()">Render</button>
     <button class="btn-export" onclick="exportGLB()">Export GLB</button>
   </div>
@@ -142,13 +174,13 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
   <div class="left-panel">
     <div class="panel-header">
       <div class="panel-title" id="lib-title">Chair Fabrics</div>
-      <div class="panel-sub" id="lib-sub">MityLite Sierra Collection</div>
+      <div class="panel-sub" id="lib-sub">MityLite Sierra Collection · Drag to part</div>
     </div>
     <div class="fabric-scroll" id="fab-scroll"></div>
   </div>
 
   <!-- Center: 3D -->
-  <div class="viewport-wrap">
+  <div class="viewport-wrap" id="viewport-wrap">
     <canvas id="viewer"></canvas>
     <div id="loading">
       <div class="spinner"></div>
@@ -158,58 +190,121 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
       <span><span class="h-key">drag</span> Orbit</span>
       <span><span class="h-key">right-drag</span> Pan</span>
       <span><span class="h-key">scroll</span> Zoom</span>
+      <span><span class="h-key">drag fabric</span> Apply</span>
     </div>
+    <div id="drop-hint">Drop fabric on a part to apply</div>
   </div>
 
   <!-- Right: Controls -->
-  <div class="right-panel">
-    <div class="r-sec">
-      <div class="r-sec-t">Parts</div>
-      <div class="m-ctrl">
-        <button class="m-btn" onclick="selectAll()">All</button>
-        <button class="m-btn" onclick="deselectAll()">None</button>
+  <div class="right-panel" id="right-panel">
+    <!-- PRODUCT MODE right panel -->
+    <div id="panel-product">
+      <div class="r-sec">
+        <div class="r-sec-t">Parts</div>
+        <div class="m-ctrl">
+          <button class="m-btn" onclick="selectAll()">All</button>
+          <button class="m-btn" onclick="deselectAll()">None</button>
+        </div>
+        <div id="mesh-list"><div style="font-size:11px;color:var(--text-muted)">Load a model to begin</div></div>
       </div>
-      <div id="mesh-list"><div style="font-size:11px;color:var(--text-muted)">Load a model to begin</div></div>
-    </div>
-    <div class="r-sec">
-      <div class="r-sec-t">Applied Material</div>
-      <div class="app-prev">
-        <div class="app-sw" id="app-sw"></div>
-        <div>
-          <div class="app-name" id="app-name">— none —</div>
-          <div class="app-vend" id="app-vend"></div>
+      <div class="r-sec">
+        <div class="r-sec-t">Applied Material</div>
+        <div class="app-prev">
+          <div class="app-sw" id="app-sw"></div>
+          <div>
+            <div class="app-name" id="app-name">— none —</div>
+            <div class="app-vend" id="app-vend"></div>
+          </div>
+        </div>
+      </div>
+      <div class="r-sec">
+        <div class="r-sec-t">Material Adjustments</div>
+        <div class="sl-row">
+          <div class="sl-lbl">Brightness <span class="sl-val" id="v-brightness">1.00</span></div>
+          <input type="range" id="s-brightness" min="0.01" max="2" step="0.05" value="1" oninput="updateBrightness(+this.value)">
+        </div>
+        <div class="sl-row">
+          <div class="sl-lbl">Roughness <span class="sl-val" id="v-roughness">0.72</span></div>
+          <input type="range" id="s-roughness" min="0" max="1" step="0.01" value="0.72" oninput="applyProp('roughness',+this.value)">
+        </div>
+        <div class="sl-row">
+          <div class="sl-lbl">Metalness <span class="sl-val" id="v-metalness">0.00</span></div>
+          <input type="range" id="s-metalness" min="0" max="1" step="0.01" value="0" oninput="applyProp('metalness',+this.value)">
+        </div>
+        <div class="sl-row">
+          <div class="sl-lbl">Fabric Fuzz <span class="sl-val" id="v-sheen">0.00</span></div>
+          <input type="range" id="s-sheen" min="0" max="1" step="0.01" value="0" oninput="applyProp('sheen',+this.value)">
+        </div>
+        <div class="sl-row">
+          <div class="sl-lbl">Pattern Scale <span class="sl-val" id="v-scale">10.0</span></div>
+          <input type="range" id="s-scale" min="0.5" max="20" step="0.1" value="10" oninput="updateTexScale(+this.value)">
+        </div>
+        <div class="sl-row">
+          <div class="sl-lbl">Bump Strength <span class="sl-val" id="v-norm">1.0</span></div>
+          <input type="range" id="s-norm" min="0" max="3" step="0.1" value="1" oninput="updateNormScale(+this.value)">
         </div>
       </div>
     </div>
-    <div class="r-sec">
-      <div class="r-sec-t">Material Adjustments</div>
-      <div class="sl-row">
-        <div class="sl-lbl">Brightness <span class="sl-val" id="v-brightness">1.00</span></div>
-        <input type="range" id="s-brightness" min="0.01" max="2" step="0.05" value="1" oninput="updateBrightness(+this.value)">
+
+    <!-- ROOM MODE right panel -->
+    <div id="panel-room" style="display:none">
+      <div class="room-controls">
+        <div class="r-sec-t">Room Elements</div>
+        <div class="room-row">
+          <button class="room-chip on" id="chip-walls" onclick="toggleRoomEl('walls')">Walls</button>
+          <button class="room-chip on" id="chip-floor" onclick="toggleRoomEl('floor')">Floor</button>
+          <button class="room-chip on" id="chip-windows" onclick="toggleRoomEl('windows')">Windows</button>
+        </div>
+        <div class="room-row">
+          <button class="room-chip on" id="chip-doors" onclick="toggleRoomEl('doors')">Doors</button>
+          <button class="room-chip on" id="chip-rug" onclick="toggleRoomEl('rug')">Rug</button>
+          <button class="room-chip" id="chip-ceiling" onclick="toggleRoomEl('ceiling')">Ceiling</button>
+        </div>
       </div>
-      <div class="sl-row">
-        <div class="sl-lbl">Roughness <span class="sl-val" id="v-roughness">0.72</span></div>
-        <input type="range" id="s-roughness" min="0" max="1" step="0.01" value="0.72" oninput="applyProp('roughness',+this.value)">
+      <div class="room-controls explode-slider">
+        <div class="r-sec-t">Explode View</div>
+        <div class="sl-row">
+          <div class="sl-lbl">Explode <span class="sl-val" id="v-explode">0.0</span></div>
+          <input type="range" id="s-explode" min="0" max="1" step="0.01" value="0" oninput="updateExplode(+this.value)">
+        </div>
+        <button class="m-btn" style="width:100%;margin-top:4px" onclick="animateExplode()">▶ Animate</button>
       </div>
-      <div class="sl-row">
-        <div class="sl-lbl">Metalness <span class="sl-val" id="v-metalness">0.00</span></div>
-        <input type="range" id="s-metalness" min="0" max="1" step="0.01" value="0" oninput="applyProp('metalness',+this.value)">
+      <div class="r-sec">
+        <div class="r-sec-t">Furniture Parts</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px">Click part · Drag fabric to apply</div>
+        <div id="piece-list"></div>
       </div>
-      <div class="sl-row">
-        <div class="sl-lbl">Fabric Fuzz <span class="sl-val" id="v-sheen">0.00</span></div>
-        <input type="range" id="s-sheen" min="0" max="1" step="0.01" value="0" oninput="applyProp('sheen',+this.value)">
+      <div class="r-sec">
+        <div class="r-sec-t">Applied Material</div>
+        <div class="app-prev">
+          <div class="app-sw" id="app-sw-room"></div>
+          <div>
+            <div class="app-name" id="app-name-room">— none —</div>
+            <div class="app-vend" id="app-vend-room"></div>
+          </div>
+        </div>
       </div>
-      <div class="sl-row">
-        <div class="sl-lbl">Pattern Scale <span class="sl-val" id="v-scale">10.0</span></div>
-        <input type="range" id="s-scale" min="0.5" max="20" step="0.1" value="10" oninput="updateTexScale(+this.value)">
-      </div>
-      <div class="sl-row">
-        <div class="sl-lbl">Bump Strength <span class="sl-val" id="v-norm">1.0</span></div>
-        <input type="range" id="s-norm" min="0" max="3" step="0.1" value="1" oninput="updateNormScale(+this.value)">
+      <div class="r-sec">
+        <div class="r-sec-t">Material Adjustments</div>
+        <div class="sl-row">
+          <div class="sl-lbl">Brightness <span class="sl-val" id="v-brightness-r">1.00</span></div>
+          <input type="range" id="s-brightness-r" min="0.01" max="2" step="0.05" value="1" oninput="updateBrightness(+this.value)">
+        </div>
+        <div class="sl-row">
+          <div class="sl-lbl">Roughness <span class="sl-val" id="v-roughness-r">0.72</span></div>
+          <input type="range" id="s-roughness-r" min="0" max="1" step="0.01" value="0.72" oninput="applyProp('roughness',+this.value)">
+        </div>
+        <div class="sl-row">
+          <div class="sl-lbl">Pattern Scale <span class="sl-val" id="v-scale-r">10.0</span></div>
+          <input type="range" id="s-scale-r" min="0.5" max="20" step="0.1" value="10" oninput="updateTexScale(+this.value)">
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Drag ghost element -->
+<div id="drag-ghost"><img id="drag-ghost-img" src="" alt=""></div>
 
 <div id="toast"></div>
 
@@ -220,85 +315,56 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 const CHAIR_GLB = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/custom_assets/chair_split.glb';
 const SOFA_GLB  = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/custom_assets/sofa.glb';
 const MITY_IMG  = 'https://fabrics.mityinc.com/server/public/fabrics/';
-
-// Polyhaven file API endpoint used at runtime:
-// https://api.polyhaven.com/files/{id}
-// Returns JSON with keys like 'nor_gl', 'rough', 'Diffuse' etc.
-// For each key: { '1k': { jpg: { url: '...' } } }
 const POLY_API  = 'https://api.polyhaven.com/files/';
 
-// ── Polyhaven texture ID lookup per material type ─────────────────────────
-// All IDs confirmed from user's Polyhaven list
 const POLY_IDS = {
-  fabric:  'fabric_pattern_05', // woven fabric — confirmed
-  vinyl:   'scuba_suede',       // smooth coated — confirmed (vinyl_pattern_01 is 404)
-  pu:      'leather_white',     // polyurethane — confirmed
-  leather: 'leather_white',     // full grain leather — confirmed
-  linen:   'rough_linen',       // linen/natural — confirmed
-  wood:    'brown_leather',     // faux wood frame — confirmed
-  // Sofa pattern-specific overrides (user-specified, keyed by patKey on item)
-  twist:   'hessian_230',       // Douglass Twist — confirmed
-  kaleid:  'caban',             // Douglass Kaleidoscope Neo — confirmed
+  fabric:  'fabric_pattern_05',
+  vinyl:   'scuba_suede',
+  pu:      'leather_white',
+  leather: 'leather_white',
+  linen:   'rough_linen',
+  wood:    'brown_leather',
+  twist:   'hessian_230',
+  kaleid:  'caban',
 };
 
-// ── Supabase PBR fallback maps — used if Polyhaven fetch fails ────────────
-// All files confirmed .jpg (user shared leather_fabric/Roughness.jpg URL)
-// Folders confirmed from Supabase bucket screenshot
 const SB = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/';
 const SUPABASE_MAPS = {
   fabric:  { norm: [SB+'cotton_fabric/Normal.jpg',  SB+'cotton_fabric/Normal.webp'],
              rough:[SB+'cotton_fabric/Roughness.jpg',SB+'cotton_fabric/Roughness.webp'] },
   linen:   { norm: [SB+'cotton_fabric/Normal.jpg',  SB+'cotton_fabric/Normal.webp'],
              rough:[SB+'cotton_fabric/Roughness.jpg',SB+'cotton_fabric/Roughness.webp'] },
-  velvet:  { norm: [SB+'velvet_fabric/Normal.jpg',  SB+'velvet_fabric/Normal.webp'],
-             rough:[SB+'velvet_fabric/Roughness.jpg',SB+'velvet_fabric/Roughness.webp'] },
   vinyl:   { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
              rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
   pu:      { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
              rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
   leather: { norm: [SB+'leather_fabric/Normal.jpg', SB+'leather_fabric/Normal.webp'],
              rough:[SB+'leather_fabric/Roughness.jpg',SB+'leather_fabric/Roughness.webp'] },
-  wood:    { norm: [SB+'wood_texture/Normal.jpg'],
-             rough:[SB+'wood_texture/Roughness.jpg'] },
+  wood:    { norm: [SB+'wood_texture/Normal.jpg',   SB+'wood_texture/Normal.webp'],
+             rough:[SB+'wood_texture/Roughness.jpg', SB+'wood_texture/Roughness.webp'] },
 };
 
-// Try each URL in the array until one loads successfully —
-// matches App.tsx's loadTextureWithFallbacks which tries ['.webp','.jpg','.png','.jpeg'] in order
-function loadTexFirstSuccess(urls, srgb) {
-  if(!urls || !urls.length) return Promise.resolve(null);
-  return urls.reduce(
-    (chain, url) => chain.catch(() => tryLoadTex(url, srgb)),
-    Promise.reject()
-  ).catch(() => null);
+async function loadTexFirstSuccess(urls, isSrgb) {
+  for(const url of urls) {
+    try { const t = await tryLoadTex(url, isSrgb); if(t) return t; } catch(e){}
+  }
+  return null;
 }
 
-
-// ── MityLite Sierra Armchair — Faux Wood Finishes (8) ─────────────────────
-// Wood finish images must be hosted in Supabase to avoid CORS.
-// Upload these files to: fabric_assets/wood_texture/finishes/
-// Source URLs to download from (MityLite blocks cross-origin from Vercel):
-//   https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Ashwood.jpg   → Ashwood.jpg
-//   https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Cashew.jpg    → Cashew.jpg
-//   https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Cider.jpg     → Cider.jpg
-//   https://mitylite.com/wp-content/uploads/2024/08/ebony-faux-wood-300x300-1.jpg → Ebony.jpg
-//   https://mitylite.com/wp-content/uploads/2026/03/Faux-Wood_Elmwood.jpg   → Elmwood.jpg
-//   https://mitylite.com/wp-content/uploads/2024/08/kona-faux-wood-300x300-1.jpg  → Kona.jpg
-//   https://mitylite.com/wp-content/uploads/2024/08/mink-faux-wood-300x300-1.jpg  → Mink.jpg
-//   https://mitylite.com/wp-content/uploads/2024/08/shoreline-faux-wood-300x300-1.jpg → Shoreline.jpg
-const WF = SB + 'wood_texture/custom/'; // Supabase wood finish folder
+// ── Fabric data (Chair) ───────────────────────────────────────────────────
+const MF = MITY_IMG;
+const WF = SB + 'wood_texture/custom/';
 const CHAIR_WOOD = [
-  { code:'ASHWOOD',   name:'Ashwood',   hex:'#c8a882', type:'wood', polyId:'oak_veneer_01',        img: WF+'Ashwood.jpg'   },
-  { code:'CASHEW',    name:'Cashew',    hex:'#b08d6b', type:'wood', polyId:'kitchen_wood',          img: WF+'Cashew.jpg'    },
-  { code:'CIDER',     name:'Cider',     hex:'#8b5e3c', type:'wood', polyId:'lacquered_cherry_wood', img: WF+'Cider.jpg'     },
-  { code:'EBONY',     name:'Ebony',     hex:'#2c1f14', type:'wood', polyId:'fine_grained_wood',     img: WF+'Ebony.jpg'     },
-  { code:'ELMWOOD',   name:'Elmwood',   hex:'#a07850', type:'wood', polyId:'wood_table_001',        img: WF+'Elmwood.jpg'   },
-  { code:'KONA',      name:'Kona',      hex:'#5c3a1e', type:'wood', polyId:'rosewood_veneer1',      img: WF+'Kona.jpg'      },
-  { code:'MINK',      name:'Mink',      hex:'#d0c0a8', type:'wood', polyId:'coated_pine',           img: WF+'Mink.jpg'      },
-  { code:'SHORELINE', name:'Shoreline', hex:'#6e5840', type:'wood', polyId:'synthetic_wood',        img: WF+'Shoreline.jpg' },
-];
+  { code:'ASHWOOD',   name:'Ashwood',   hex:'#c8a882', type:'wood', img: WF+'Ashwood.jpg'   },
+  { code:'CASHEW',    name:'Cashew',    hex:'#b08d6b', type:'wood', img: WF+'Cashew.jpg'    },
+  { code:'CIDER',     name:'Cider',     hex:'#8b5e3c', type:'wood', img: WF+'Cider.jpg'     },
+  { code:'EBONY',     name:'Ebony',     hex:'#2c1f14', type:'wood', img: WF+'Ebony.jpg'     },
+  { code:'ELMWOOD',   name:'Elmwood',   hex:'#a07850', type:'wood', img: WF+'Elmwood.jpg'   },
+  { code:'KONA',      name:'Kona',      hex:'#5c3a1e', type:'wood', img: WF+'Kona.jpg'      },
+  { code:'MINK',      name:'Mink',      hex:'#d0c0a8', type:'wood', img: WF+'Mink.jpg'      },
+  { code:'SHORELINE', name:'Shoreline', hex:'#6e5840', type:'wood', img: WF+'Shoreline.jpg' },
+].map(c=>({...c,vendor:'mity'}));
 
-// ── All 152 MityLite fabrics with real image URLs ─────────────────────────
-const MF = MITY_IMG; // shorthand alias
 const CHAIR_FABRICS = [
   // ── Abilene (vinyl) ───────────────────────────────────────────────────
   {name:'Abilene Bark',    img:MF+'ABILE808V.jpg',    type:'vinyl', series:'Abilene'},
@@ -354,31 +420,31 @@ const CHAIR_FABRICS = [
   {name:'Amuse Poppy',   img:MF+'amuse-poppy.jpg',   type:'pu', series:'Amuse'},
   {name:'Amuse Quartz',  img:MF+'amuse-quartz.jpg',  type:'pu', series:'Amuse'},
   // ── Anchor (fabric) ───────────────────────────────────────────────────
-  {name:'Anchor Albatross',  img:MF+'Anchor_Albatross.jpg',  type:'fabric', series:'Anchor'},
-  {name:'Anchor Cardinal',   img:MF+'Anchor_Cardinal.jpg',   type:'fabric', series:'Anchor'},
-  {name:'Anchor Driftwood',  img:MF+'Anchor_Driftwood.jpg',  type:'fabric', series:'Anchor'},
-  {name:'Anchor Fog',        img:MF+'Anchor_Fog.jpg',        type:'fabric', series:'Anchor'},
-  {name:'Anchor Gull',       img:MF+'Anchor_Gull.jpg',       type:'fabric', series:'Anchor'},
-  {name:'Anchor Iceberg',    img:MF+'Anchor_Iceberg.jpg',    type:'fabric', series:'Anchor'},
-  {name:'Anchor Ink',        img:MF+'Anchor_Ink.jpg',        type:'fabric', series:'Anchor'},
-  {name:'Anchor Iron',       img:MF+'Anchor_Iron.jpg',       type:'fabric', series:'Anchor'},
-  {name:'Anchor Pea',        img:MF+'Anchor_Pea.jpg',        type:'fabric', series:'Anchor'},
-  {name:'Anchor Salt',       img:MF+'Anchor_Salt.jpg',       type:'fabric', series:'Anchor'},
-  {name:'Anchor Sand Dollar', img:MF+'Anchor_SandDollar.jpg',type:'fabric', series:'Anchor'},
-  {name:'Anchor Storm',      img:MF+'Anchor_Storm.jpg',      type:'fabric', series:'Anchor'},
+  {name:'Anchor Albatross',   img:MF+'Anchor_Albatross.jpg',   type:'fabric', series:'Anchor'},
+  {name:'Anchor Cardinal',    img:MF+'Anchor_Cardinal.jpg',    type:'fabric', series:'Anchor'},
+  {name:'Anchor Driftwood',   img:MF+'Anchor_Driftwood.jpg',  type:'fabric', series:'Anchor'},
+  {name:'Anchor Fog',         img:MF+'Anchor_Fog.jpg',         type:'fabric', series:'Anchor'},
+  {name:'Anchor Gull',        img:MF+'Anchor_Gull.jpg',        type:'fabric', series:'Anchor'},
+  {name:'Anchor Iceberg',     img:MF+'Anchor_Iceberg.jpg',     type:'fabric', series:'Anchor'},
+  {name:'Anchor Ink',         img:MF+'Anchor_Ink.jpg',         type:'fabric', series:'Anchor'},
+  {name:'Anchor Iron',        img:MF+'Anchor_Iron.jpg',        type:'fabric', series:'Anchor'},
+  {name:'Anchor Pea',         img:MF+'Anchor_Pea.jpg',         type:'fabric', series:'Anchor'},
+  {name:'Anchor Salt',        img:MF+'Anchor_Salt.jpg',        type:'fabric', series:'Anchor'},
+  {name:'Anchor Sand Dollar',  img:MF+'Anchor_SandDollar.jpg', type:'fabric', series:'Anchor'},
+  {name:'Anchor Storm',       img:MF+'Anchor_Storm.jpg',       type:'fabric', series:'Anchor'},
   // ── Archetype (fabric) ────────────────────────────────────────────────
-  {name:'Archetype Admiral',   img:MF+'archetype_admiral_zm.jpg',    type:'fabric', series:'Archetype'},
-  {name:'Archetype Anchor',    img:MF+'archetype_anchor_zm.jpg',     type:'fabric', series:'Archetype'},
-  {name:'Archetype Blackberry',img:MF+'archetype_blackberry_zm.jpg', type:'fabric', series:'Archetype'},
-  {name:'Archetype Bourbon',   img:MF+'archetype_bourbon_zm.jpg',    type:'fabric', series:'Archetype'},
-  {name:'Archetype Cafe',      img:MF+'archetype_cafe_zm.jpg',       type:'fabric', series:'Archetype'},
-  {name:'Archetype Carbon',    img:MF+'300archetype_carbon_zm.jpg',  type:'fabric', series:'Archetype'},
-  {name:'Archetype Hemp',      img:MF+'archetype_hemp_zm.jpg',       type:'fabric', series:'Archetype'},
-  {name:'Archetype Herbal',    img:MF+'archetype_herbal_zm.jpg',     type:'fabric', series:'Archetype'},
-  {name:'Archetype Quartz',    img:MF+'archetype_quartz_zm.jpg',     type:'fabric', series:'Archetype'},
-  {name:'Archetype Silt',      img:MF+'archetype_silt_zm.jpg',       type:'fabric', series:'Archetype'},
-  {name:'Archetype Smoke',     img:MF+'archetype_smoke_zm.jpg',      type:'fabric', series:'Archetype'},
-  {name:'Archetype Vermilion', img:MF+'archetype_vermilion_zm.jpg',  type:'fabric', series:'Archetype'},
+  {name:'Archetype Admiral',    img:MF+'archetype_admiral_zm.jpg',    type:'fabric', series:'Archetype'},
+  {name:'Archetype Anchor',     img:MF+'archetype_anchor_zm.jpg',     type:'fabric', series:'Archetype'},
+  {name:'Archetype Blackberry', img:MF+'archetype_blackberry_zm.jpg', type:'fabric', series:'Archetype'},
+  {name:'Archetype Bourbon',    img:MF+'archetype_bourbon_zm.jpg',    type:'fabric', series:'Archetype'},
+  {name:'Archetype Cafe',       img:MF+'archetype_cafe_zm.jpg',       type:'fabric', series:'Archetype'},
+  {name:'Archetype Carbon',     img:MF+'300archetype_carbon_zm.jpg',  type:'fabric', series:'Archetype'},
+  {name:'Archetype Hemp',       img:MF+'archetype_hemp_zm.jpg',       type:'fabric', series:'Archetype'},
+  {name:'Archetype Herbal',     img:MF+'archetype_herbal_zm.jpg',     type:'fabric', series:'Archetype'},
+  {name:'Archetype Quartz',     img:MF+'archetype_quartz_zm.jpg',     type:'fabric', series:'Archetype'},
+  {name:'Archetype Silt',       img:MF+'archetype_silt_zm.jpg',       type:'fabric', series:'Archetype'},
+  {name:'Archetype Smoke',      img:MF+'archetype_smoke_zm.jpg',      type:'fabric', series:'Archetype'},
+  {name:'Archetype Vermilion',  img:MF+'archetype_vermilion_zm.jpg',  type:'fabric', series:'Archetype'},
   // ── Aretha (fabric) ───────────────────────────────────────────────────
   {name:'Aretha Midnight', img:MF+'culp-aretha-midnight.jpg', type:'fabric', series:'Aretha'},
   {name:'Aretha Smoke',    img:MF+'culp-aretha-smoke.jpg',    type:'fabric', series:'Aretha'},
@@ -408,26 +474,26 @@ const CHAIR_FABRICS = [
   {name:'Art. Sky',         img:MF+'momentum-artisanal-epu-sky.jpg',         type:'pu', series:'Artisanal EPU'},
   {name:'Art. Taupe',       img:MF+'momentum-artisanal-epu-taupe.jpg',       type:'pu', series:'Artisanal EPU'},
   // ── Berwick Tweed (fabric) ────────────────────────────────────────────
-  {name:'BT After Glow',       img:MF+'berwick-tweed_after-glow_100.jpg',       type:'fabric', series:'Berwick Tweed'},
-  {name:'BT All Nighter',      img:MF+'berwick-tweed_all-nighter_200.jpg',      type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Angels Feather',   img:MF+'berwick-tweed_angels-feather_300.jpg',   type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Baja Sunset',      img:MF+'berwick-tweed_baja-sunset_400.jpg',      type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Bobcat Whisker',   img:MF+'berwick-tweed_bobcat-whisker_1100.jpg',  type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Bodhi Tree',       img:MF+'berwick-tweed_bodhi-tree_500.jpg',       type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Carbon Footprint', img:MF+'berwick-tweed_carbon-footprint_600.jpg', type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Cedar Ridge',      img:MF+'berwick-tweed_cedar-ridge_700.jpg',      type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Dream Catcher',    img:MF+'berwick-tweed_dream-catcher_800.jpg',    type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Labyrinth Walk',   img:MF+'berwick-tweed_labyrinth-walk_900.jpg',   type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Mischeavous Mink', img:MF+'berwick-tweed_mischeavous-mink_1000.jpg',type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Polished Pewter',  img:MF+'berwick-tweed_polished-pewter_1200.jpg', type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Racoon Eyes',      img:MF+'berwick-tweed_racoon-eyes_1300.jpg',     type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Sandy Toes',       img:MF+'berwick-tweed_sandy-toes_1400.jpg',      type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Sea Glass',        img:MF+'berwick-tweed_sea-glass_1500.jpg',       type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Soft Suede',       img:MF+'berwick-tweed_soft-suede_1600.jpg',      type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Spiked Apricot',   img:MF+'berwick-tweed_spiked-apricot_1700.jpg',  type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Thai Basil',       img:MF+'berwick-tweed_thai-basil_1800.jpg',      type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Tranquality',      img:MF+'berwick-tweed_tranquality_1900.jpg',     type:'fabric', series:'Berwick Tweed'},
-  {name:'BT Zen Essence',      img:MF+'berwick-tweed_zen-essence_2000.jpg',     type:'fabric', series:'Berwick Tweed'},
+  {name:'BT After Glow',       img:MF+'berwick-tweed_after-glow_100.jpg',        type:'fabric', series:'Berwick Tweed'},
+  {name:'BT All Nighter',      img:MF+'berwick-tweed_all-nighter_200.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Angels Feather',   img:MF+'berwick-tweed_angels-feather_300.jpg',    type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Baja Sunset',      img:MF+'berwick-tweed_baja-sunset_400.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Bobcat Whisker',   img:MF+'berwick-tweed_bobcat-whisker_1100.jpg',   type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Bodhi Tree',       img:MF+'berwick-tweed_bodhi-tree_500.jpg',        type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Carbon Footprint', img:MF+'berwick-tweed_carbon-footprint_600.jpg',  type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Cedar Ridge',      img:MF+'berwick-tweed_cedar-ridge_700.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Dream Catcher',    img:MF+'berwick-tweed_dream-catcher_800.jpg',     type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Labyrinth Walk',   img:MF+'berwick-tweed_labyrinth-walk_900.jpg',    type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Mischeavous Mink', img:MF+'berwick-tweed_mischeavous-mink_1000.jpg', type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Polished Pewter',  img:MF+'berwick-tweed_polished-pewter_1200.jpg',  type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Racoon Eyes',      img:MF+'berwick-tweed_racoon-eyes_1300.jpg',      type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Sandy Toes',       img:MF+'berwick-tweed_sandy-toes_1400.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Sea Glass',        img:MF+'berwick-tweed_sea-glass_1500.jpg',        type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Soft Suede',       img:MF+'berwick-tweed_soft-suede_1600.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Spiked Apricot',   img:MF+'berwick-tweed_spiked-apricot_1700.jpg',   type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Thai Basil',       img:MF+'berwick-tweed_thai-basil_1800.jpg',       type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Tranquality',      img:MF+'berwick-tweed_tranquality_1900.jpg',      type:'fabric', series:'Berwick Tweed'},
+  {name:'BT Zen Essence',      img:MF+'berwick-tweed_zen-essence_2000.jpg',      type:'fabric', series:'Berwick Tweed'},
   // ── Beso (fabric) ─────────────────────────────────────────────────────
   {name:'Beso Aqua',    img:MF+'culp-beso-aqua.jpg',     type:'fabric', series:'Beso'},
   {name:'Beso Capri',   img:MF+'culp-beso-capri.jpg',    type:'fabric', series:'Beso'},
@@ -457,7 +523,6 @@ const CHAIR_FABRICS = [
   {name:'Bestie Pewter',     img:MF+'culp-bestie-pewter.jpg',     type:'fabric', series:'Bestie'},
 ];
 
-// ── Douglass & Ennis Sofa Fabrics ─────────────────────────────────────────
 const D = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/fabric_images/douglass/';
 const SOFA_KALEID = [
   {name:'Bazaar',id:'712',hex:'#6b4e5e'},{name:'Bronze',id:'541',hex:'#8b6840'},{name:'Champagne',id:'120',hex:'#d4c4a0'},
@@ -501,7 +566,6 @@ const SOFA_CHALLENGER = [
   {name:'33 Celeste',hex:'#80b8c8'},
 ].map(c=>({...c,img:null,pattern:'Challenger',vendor:'ennis',type:'leather'}));
 
-// ── Library ───────────────────────────────────────────────────────────────
 const LIBRARY = {
   chair: [
     { group:'Faux Wood Finishes',     vendor:'MityLite Sierra', vclass:'mity', items: CHAIR_WOOD },
@@ -531,17 +595,13 @@ let meshEntries = [];
 let currentModel = null;
 let activeBtnEl = null;
 let lastAppliedItem = null;
+let roomMode = false;
 
-// slider state
+// Slider state
 let sBrightness = 1.0, sRoughness = 0.72, sMetalness = 0, sSheen = 0, sScale = 10.0, sNorm = 1.0;
-// base color for brightness recalc
 let baseColorHex = '#ffffff';
 const BASE_TILE = 0.3;
-
-// Polyhaven cache: polyId -> { normUrl, roughUrl } (resolved at runtime)
 const polyCache = {};
-
-// Texture cache
 const texCache = {};
 const texLoader = new THREE.TextureLoader();
 texLoader.setCrossOrigin('anonymous');
@@ -553,6 +613,26 @@ let tgt = new THREE.Vector3();
 let _dirty = true;
 function markDirty(){ _dirty = true; }
 
+// ── Room state ─────────────────────────────────────────────────────────────
+let roomGroup = null;
+let roomElements = {walls:null, floor:null, windows:null, doors:null, rug:null, ceiling:null};
+let roomVisible = {walls:true, floor:true, windows:true, doors:true, rug:true, ceiling:false};
+let explodeVal = 0;
+let explodeAnim = null;
+
+// Piece system (room mode per-mesh fabric targeting)
+let selectedPieceId = null; // which meshEntry.id is targeted in room mode
+
+// Raycaster for drag-drop
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// ── Drag state ────────────────────────────────────────────────────────────
+let dragItem = null;   // {gi, ii, item}
+let dragActive = false;
+const ghost = document.getElementById('drag-ghost');
+const ghostImg = document.getElementById('drag-ghost-img');
+
 // ── Utilities ─────────────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -560,14 +640,12 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2400);
 }
-
 function setSliderVal(id, val, decimals=2) {
   const el = document.getElementById('s-'+id);
   if(el) el.value = val;
   const vEl = document.getElementById('v-'+id);
   if(vEl) vEl.textContent = (+val).toFixed(decimals);
 }
-
 function tryLoadTex(url, isSrgb) {
   if(texCache[url]) return Promise.resolve(texCache[url]);
   return new Promise((resolve, reject) => {
@@ -581,8 +659,6 @@ function tryLoadTex(url, isSrgb) {
     }, undefined, ()=>reject(new Error('404')));
   });
 }
-
-// ── makeGreyscaleTex (from App.tsx exactly) ───────────────────────────────
 function makeGreyscaleTex(origTex) {
   if(!origTex || !origTex.image) return null;
   try {
@@ -594,8 +670,7 @@ function makeGreyscaleTex(origTex) {
     c.width = w; c.height = h;
     const ctx = c.getContext('2d');
     if(!ctx) return null;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0,0,w,h);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h);
     ctx.filter = 'grayscale(100%) brightness(1.2) contrast(1.1)';
     ctx.drawImage(img,0,0,w,h);
     const t = new THREE.CanvasTexture(c);
@@ -610,301 +685,277 @@ function makeGreyscaleTex(origTex) {
     return t;
   } catch(e) { return null; }
 }
-
-// ── Polyhaven: fetch normal+roughness URLs for a texture ID ───────────────
 const POLY_NORM_KEYS  = ['nor_gl','Normal','nor_dx','nor','Nor_GL','NormalGL'];
 const POLY_ROUGH_KEYS = ['Rough','rough','Roughness','roughness'];
-
 function pickPolyUrl(files, keys) {
   const norm = s => s.toLowerCase().replace(/[\s_-]/g,'');
   const fk = Object.keys(files);
   for(const key of keys) {
     const d = files[key];
-    if(d) {
-      const url = d?.['1k']?.jpg?.url || d?.['2k']?.jpg?.url;
-      if(url) return url;
-    }
+    if(d) { const url = d?.['1k']?.jpg?.url || d?.['2k']?.jpg?.url; if(url) return url; }
     const nk = norm(key);
     const m = fk.find(k=>norm(k)===nk);
-    if(m && files[m]) {
-      const url = files[m]?.['1k']?.jpg?.url || files[m]?.['2k']?.jpg?.url;
-      if(url) return url;
-    }
+    if(m && files[m]) { const url = files[m]?.['1k']?.jpg?.url || files[m]?.['2k']?.jpg?.url; if(url) return url; }
   }
   return null;
 }
-
 async function getPolyMaps(polyId) {
-  if(polyCache[polyId]) {
-    console.log(`[Polyhaven] cache hit for "${polyId}"`, polyCache[polyId]);
-    return polyCache[polyId];
-  }
-  const url = POLY_API + polyId;
-  console.log(`[Polyhaven] fetching → ${url}`);
+  if(polyCache[polyId]) return polyCache[polyId];
   try {
-    const res = await fetch(url);
-    console.log(`[Polyhaven] response status: ${res.status} for "${polyId}"`);
+    const res = await fetch(POLY_API + polyId);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const files = await res.json();
-    console.log(`[Polyhaven] raw file keys for "${polyId}":`, Object.keys(files));
     const normUrl  = pickPolyUrl(files, POLY_NORM_KEYS);
     const roughUrl = pickPolyUrl(files, POLY_ROUGH_KEYS);
-    console.log(`[Polyhaven] resolved for "${polyId}" →`, { normUrl, roughUrl });
     polyCache[polyId] = { normUrl, roughUrl };
     return polyCache[polyId];
   } catch(e) {
-    console.warn(`[Polyhaven] FAILED for "${polyId}":`, e.message);
     polyCache[polyId] = { normUrl:null, roughUrl:null };
     return polyCache[polyId];
   }
 }
 
-// ── Apply swatch to checked meshes ────────────────────────────────────────
-async function applySwatch(gi, ii, btnEl) {
-  const item = LIBRARY[currentModelKey][gi].items[ii];
-  if(!meshEntries.some(e=>e.checked)) { showToast('Select a part →'); return; }
-
-  // Active state
-  if(activeBtnEl) activeBtnEl.classList.remove('active');
-  activeBtnEl = btnEl;
-  btnEl.classList.add('active');
-  lastAppliedItem = item;
-
-  // Update applied preview
-  document.getElementById('app-name').textContent = item.name;
-  const vendorLabel = item.vendor==='douglass' ? 'Douglass Fabrics' : item.vendor==='ennis' ? 'Ennis Fabrics' : 'MityLite Sierra';
-  document.getElementById('app-vend').textContent = (item.pattern||'') + (item.pattern?' · ':'') + vendorLabel;
-  const appSw = document.getElementById('app-sw');
-  appSw.innerHTML = '';
-  appSw.style.background = item.hex || '#ccc';
-  if(item.img) {
-    const img = document.createElement('img');
-    img.src = item.img; img.alt = item.name;
-    img.onerror = () => { img.remove(); appSw.style.background = item.hex || '#ccc'; };
-    appSw.appendChild(img);
-  }
-
-  // Set slider defaults per material type
-  const defaults = {
-    wood:    { roughness:0.55, sheen:0.00, metalness:0.0, scale:5.0,  norm:0.8 },
-    vinyl:   { roughness:0.48, sheen:0.05, metalness:0.0, scale:8.0,  norm:0.4 },
-    pu:      { roughness:0.52, sheen:0.10, metalness:0.0, scale:8.0,  norm:0.5 },
-    leather: { roughness:0.45, sheen:0.05, metalness:0.0, scale:6.0,  norm:0.6 },
-    fabric:  { roughness:0.78, sheen:0.25, metalness:0.0, scale:10.0, norm:1.0 },
-    linen:   { roughness:0.82, sheen:0.20, metalness:0.0, scale:10.0, norm:1.0 },
-  };
-  const def = defaults[item.type] || defaults.fabric;
-  sRoughness=def.roughness; sMetalness=def.metalness; sSheen=def.sheen; sScale=def.scale; sNorm=def.norm; sBrightness=1.0;
-  setSliderVal('brightness',1.00); setSliderVal('roughness',def.roughness); setSliderVal('metalness',0);
-  setSliderVal('sheen',def.sheen,2); setSliderVal('scale',def.scale,1); setSliderVal('norm',def.norm,1);
-
-  // ── WOOD: product image as tiled diffuse + per-finish Polyhaven normal & roughness ──
-  if(item.type === 'wood') {
-    document.getElementById('loading').classList.add('on');
-    document.getElementById('load-txt').textContent = 'Loading Texture\u2026';
-    try {
-      // 1. Per-finish Polyhaven PBR maps (normal + roughness)
-      const polyId = item.polyId || 'oak_veneer_01';
-      console.log(`[Wood] applying "${item.name}" | polyId: "${polyId}" | img: ${item.img}`);
-      const { normUrl, roughUrl } = await getPolyMaps(polyId);
-      console.log(`[Wood] PBR URLs → norm: ${normUrl} | rough: ${roughUrl}`);
-
-      let normTex  = normUrl  ? await tryLoadTex(normUrl,  false).catch(e => { console.warn('[Wood] normTex load failed:', e.message); return null; }) : null;
-      let roughTex = roughUrl ? await tryLoadTex(roughUrl, false).catch(e => { console.warn('[Wood] roughTex load failed:', e.message); return null; }) : null;
-      console.log(`[Wood] Polyhaven textures loaded → normTex: ${!!normTex} | roughTex: ${!!roughTex}`);
-
-      // Fallback to Supabase wood maps if Polyhaven fails
-      if(!normTex || !roughTex) {
-        console.log('[Wood] falling back to Supabase wood_texture maps');
-        const sbW = SUPABASE_MAPS.wood;
-        if(!normTex)  normTex  = await loadTexFirstSuccess(sbW.norm,  false);
-        if(!roughTex) roughTex = await loadTexFirstSuccess(sbW.rough, false);
-        console.log(`[Wood] after Supabase fallback → normTex: ${!!normTex} | roughTex: ${!!roughTex}`);
-      }
-
-      // 2. Diffuse = actual product photo, tiled like a fabric
-      const diffTex = item.img ? await tryLoadTex(item.img, true).catch(e => { console.warn('[Wood] diffTex load failed:', e.message); return null; }) : null;
-      console.log(`[Wood] diffTex loaded: ${!!diffTex} from ${item.img}`);
-
-      baseColorHex = item.hex;
-      meshEntries.forEach(entry => {
-        if(!entry.checked) return;
-        const mat = entry.greyMat;
-        const physRepeat = sScale * (entry.uvScaleFactor / BASE_TILE);
-
-        // Diffuse: tile the product photo so it wraps the surface with grain
-        if(diffTex) {
-          const dt = diffTex.clone();
-          dt.wrapS = dt.wrapT = THREE.RepeatWrapping;
-          dt.repeat.set(physRepeat, physRepeat);
-          dt.needsUpdate = true;
-          mat.map = dt;
-          mat.color.setRGB(Math.max(0.01, sBrightness), Math.max(0.01, sBrightness), Math.max(0.01, sBrightness));
-        } else {
-          mat.map = null;
-          mat.color.copy(new THREE.Color(item.hex)).multiplyScalar(Math.max(0.01, sBrightness));
-        }
-
-        // Normal map
-        if(normTex) {
-          const nt = normTex.clone();
-          nt.wrapS = nt.wrapT = THREE.RepeatWrapping;
-          nt.repeat.set(physRepeat, physRepeat);
-          nt.needsUpdate = true;
-          mat.normalMap = nt;
-          mat.normalScale.set(sNorm, sNorm);
-        } else { mat.normalMap = null; }
-
-        // Roughness map
-        if(roughTex) {
-          const rt = roughTex.clone();
-          rt.wrapS = rt.wrapT = THREE.RepeatWrapping;
-          rt.repeat.set(physRepeat, physRepeat);
-          rt.needsUpdate = true;
-          mat.roughnessMap = rt;
-        } else { mat.roughnessMap = null; }
-
-        mat.roughness = sRoughness;
-        mat.metalness = sMetalness;
-        mat.sheen = sSheen;
-        mat.needsUpdate = true;
-        if(Array.isArray(entry.mesh.material)) {
-          const arr = [...entry.mesh.material];
-          arr[entry.matIndex] = mat;
-          entry.mesh.material = arr;
-        }
-      });
-      markDirty();
-      console.log(`[Wood] "${item.name}" applied to ${meshEntries.filter(e=>e.checked).length} mesh(es) ✓`);
-      showToast(item.name + ' applied!');
-    } catch(e) {
-      showToast('Wood material failed: ' + e.message);
-    } finally {
-      document.getElementById('loading').classList.remove('on');
-    }
-    return;
-  }
-
+// ── Apply swatch logic (shared between click and drop) ────────────────────
+async function applySwatchToEntries(item, targetEntries) {
+  if(!targetEntries || !targetEntries.length) { showToast('Select a part →'); return; }
   document.getElementById('loading').classList.add('on');
   document.getElementById('load-txt').textContent = 'Loading Texture…';
 
+  const defaults = {
+    wood:    { roughness:0.55, sheen:0.00, metalness:0.0, scale:5.0,  norm:0.8 },
+    vinyl:   { roughness:0.45, sheen:0.05, metalness:0.0, scale:12.0, norm:0.6 },
+    pu:      { roughness:0.50, sheen:0.08, metalness:0.0, scale:10.0, norm:0.7 },
+    leather: { roughness:0.60, sheen:0.15, metalness:0.0, scale:8.0,  norm:1.0 },
+    linen:   { roughness:0.80, sheen:0.20, metalness:0.0, scale:14.0, norm:0.9 },
+    fabric:  { roughness:0.72, sheen:0.10, metalness:0.0, scale:10.0, norm:1.0 },
+  };
+  const defs = defaults[item.type] || defaults.fabric;
+  sRoughness=defs.roughness; sMetalness=defs.metalness; sSheen=defs.sheen; sScale=defs.scale; sNorm=defs.norm;
+  ['brightness','roughness','metalness','sheen','scale','norm',
+   'brightness-r','roughness-r','scale-r'].forEach(id=>{
+    const el = document.getElementById('s-'+id);
+    if(!el) return;
+    if(id.startsWith('bright')) el.value=1;
+    else if(id.includes('rough')||id==='s-roughness') el.value=defs.roughness;
+    else if(id.includes('scale')) el.value=defs.scale;
+    else if(id.includes('norm')) el.value=defs.norm;
+  });
+  setSliderVal('brightness',1); setSliderVal('roughness',defs.roughness);
+  setSliderVal('metalness',defs.metalness); setSliderVal('sheen',defs.sheen,2);
+  setSliderVal('scale',defs.scale,1); setSliderVal('norm',defs.norm,1);
+  setSliderVal('brightness-r',1); setSliderVal('roughness-r',defs.roughness);
+  setSliderVal('scale-r',defs.scale,1);
+
+  // Update applied preview (both panels)
+  const vendorLabel = item.vendor==='douglass'?'Douglass Fabrics':item.vendor==='ennis'?'Ennis Fabrics':'MityLite Sierra';
+  ['','room'].forEach(sfx=>{
+    const n=document.getElementById('app-name'+(sfx?'-'+sfx:''));
+    const v=document.getElementById('app-vend'+(sfx?'-'+sfx:''));
+    const sw=document.getElementById('app-sw'+(sfx?'-'+sfx:''));
+    if(n) n.textContent=item.name;
+    if(v) v.textContent=(item.pattern||'')+' · '+vendorLabel;
+    if(sw){
+      sw.innerHTML=''; sw.style.background=item.hex||'#ccc';
+      if(item.img){const ig=document.createElement('img');ig.src=item.img;ig.alt=item.name;ig.onerror=()=>{ig.remove();sw.style.background=item.hex||'#ccc'};sw.appendChild(ig);}
+    }
+  });
+
   try {
-    // 1. Load vendor swatch image as diffuse texture
-    let diffTex = null;
-    if(item.img) {
-      diffTex = await tryLoadTex(item.img, true).catch(()=>null);
+    if(item.type==='wood') {
+      const {normUrl,roughUrl} = await getPolyMaps(POLY_IDS.wood);
+      let normTex  = normUrl  ? await tryLoadTex(normUrl,false).catch(()=>null) : null;
+      let roughTex = roughUrl ? await tryLoadTex(roughUrl,false).catch(()=>null) : null;
+      const sbW = SUPABASE_MAPS.wood;
+      if(!normTex)  normTex  = await loadTexFirstSuccess(sbW.norm,  false);
+      if(!roughTex) roughTex = await loadTexFirstSuccess(sbW.rough, false);
+      const diffTex = item.img ? await tryLoadTex(item.img, true).catch(()=>null) : null;
+      baseColorHex = item.hex;
+      targetEntries.forEach(entry => {
+        const mat = entry.greyMat;
+        const physRepeat = sScale*(entry.uvScaleFactor/BASE_TILE);
+        if(diffTex){const dt=diffTex.clone();dt.wrapS=dt.wrapT=THREE.RepeatWrapping;dt.repeat.set(physRepeat,physRepeat);dt.needsUpdate=true;mat.map=dt;mat.color.setRGB(Math.max(0.01,sBrightness),Math.max(0.01,sBrightness),Math.max(0.01,sBrightness));}
+        else{mat.map=null;mat.color.copy(new THREE.Color(item.hex)).multiplyScalar(Math.max(0.01,sBrightness));}
+        if(normTex){const nt=normTex.clone();nt.wrapS=nt.wrapT=THREE.RepeatWrapping;nt.repeat.set(physRepeat,physRepeat);nt.needsUpdate=true;mat.normalMap=nt;mat.normalScale.set(sNorm,sNorm);}else{mat.normalMap=null;}
+        if(roughTex){const rt=roughTex.clone();rt.wrapS=rt.wrapT=THREE.RepeatWrapping;rt.repeat.set(physRepeat,physRepeat);rt.needsUpdate=true;mat.roughnessMap=rt;}else{mat.roughnessMap=null;}
+        mat.roughness=sRoughness;mat.metalness=sMetalness;mat.sheen=sSheen;mat.needsUpdate=true;
+        if(Array.isArray(entry.mesh.material)){const arr=[...entry.mesh.material];arr[entry.matIndex]=mat;entry.mesh.material=arr;}
+      });
+      markDirty(); showToast(item.name+' applied!');
+      return;
     }
 
-    // 2. Get Polyhaven normal+roughness for this material type
-    const polyId = (item.patKey && POLY_IDS[item.patKey]) ? POLY_IDS[item.patKey] : (POLY_IDS[item.type] || POLY_IDS.fabric);
-    const { normUrl, roughUrl } = await getPolyMaps(polyId);
-
-    let normTex  = normUrl  ? await tryLoadTex(normUrl,  false).catch(()=>null) : null;
-    let roughTex = roughUrl ? await tryLoadTex(roughUrl, false).catch(()=>null) : null;
-
-    // Fallback to Supabase if Polyhaven maps failed
-    const sbMaps = SUPABASE_MAPS[item.type] || SUPABASE_MAPS.fabric;
+    let diffTex = null;
+    if(item.img) diffTex = await tryLoadTex(item.img, true).catch(()=>null);
+    const polyId = (item.patKey && POLY_IDS[item.patKey]) ? POLY_IDS[item.patKey] : (POLY_IDS[item.type]||POLY_IDS.fabric);
+    const {normUrl,roughUrl} = await getPolyMaps(polyId);
+    let normTex  = normUrl  ? await tryLoadTex(normUrl,false).catch(()=>null) : null;
+    let roughTex = roughUrl ? await tryLoadTex(roughUrl,false).catch(()=>null) : null;
+    const sbMaps = SUPABASE_MAPS[item.type]||SUPABASE_MAPS.fabric;
     if(!normTex)  normTex  = await loadTexFirstSuccess(sbMaps.norm,  false);
     if(!roughTex) roughTex = await loadTexFirstSuccess(sbMaps.rough, false);
 
-    // 3. Apply to checked meshes — following App.tsx logic exactly
-    baseColorHex = item.hex || '#ffffff';
-    const baseColor = new THREE.Color(item.hex || '#ffffff');
+    baseColorHex = item.hex||'#ffffff';
+    const baseColor = new THREE.Color(item.hex||'#ffffff');
 
-    meshEntries.forEach(entry => {
-      if(!entry.checked) return;
+    targetEntries.forEach(entry => {
       const mat = entry.greyMat;
-
-      // Physics-based repeat: scale by mesh size so fabric tiles at same density.
-      // App.tsx: physRepeat = scl * (entry.uvScaleFactor / BASE_TILE)
-      const physRepeat = sScale * (entry.uvScaleFactor / BASE_TILE);
-
-      // Start with white color (App.tsx: mat.color.setRGB(1, 1, 1))
-      mat.color.setRGB(1,1,1);
-      mat.map = null;
-
-      if(diffTex) {
-        // Vendor image loaded — use as diffuse map with white × brightness tint
-        // App.tsx pattern: clone, set repeat, assign as map
-        const dt = diffTex.clone();
-        dt.wrapS = dt.wrapT = THREE.RepeatWrapping;
-        dt.repeat.set(physRepeat, physRepeat);
-        dt.needsUpdate = true;
-        mat.map = dt;
-        mat.color.setRGB(sBrightness, sBrightness, sBrightness);
-      } else if(item.hex) {
-        // No image loaded but hex color available — solid color mode
-        // App.tsx applyBaseColor: mat.map = null, color.copy(hex).multiplyScalar(brightness)
-        mat.map = null;
-        mat.color.copy(baseColor).multiplyScalar(Math.max(0.01, sBrightness));
-      } else {
-        // No image, no hex — use neutral grey (should not happen with good data)
-        mat.map = null;
-        mat.color.setRGB(0.83 * sBrightness, 0.82 * sBrightness, 0.80 * sBrightness);
-      }
-
-      // Normal + Roughness maps always use physics repeat
-      if(normTex) {
-        const nt = normTex.clone();
-        nt.wrapS = nt.wrapT = THREE.RepeatWrapping;
-        nt.repeat.set(physRepeat, physRepeat);
-        nt.needsUpdate = true;
-        mat.normalMap = nt;
-        mat.normalScale.set(sNorm, sNorm);
-      } else { mat.normalMap = null; }
-
-      if(roughTex) {
-        const rt = roughTex.clone();
-        rt.wrapS = rt.wrapT = THREE.RepeatWrapping;
-        rt.repeat.set(physRepeat, physRepeat);
-        rt.needsUpdate = true;
-        mat.roughnessMap = rt;
-      } else { mat.roughnessMap = null; }
-
-      mat.roughness  = sRoughness;
-      mat.metalness  = sMetalness;
-      mat.sheen      = sSheen;
-      mat.needsUpdate = true;
-
-      // Re-assign mesh.material so Three.js detects the change (App.tsx pattern)
-      if(Array.isArray(entry.mesh.material)) {
-        const arr = [...entry.mesh.material];
-        arr[entry.matIndex] = mat;
-        entry.mesh.material = arr;
-      }
+      const physRepeat = sScale*(entry.uvScaleFactor/BASE_TILE);
+      mat.color.setRGB(1,1,1); mat.map=null;
+      if(diffTex){const dt=diffTex.clone();dt.wrapS=dt.wrapT=THREE.RepeatWrapping;dt.repeat.set(physRepeat,physRepeat);dt.needsUpdate=true;mat.map=dt;mat.color.setRGB(sBrightness,sBrightness,sBrightness);}
+      else if(item.hex){mat.map=null;mat.color.copy(baseColor).multiplyScalar(Math.max(0.01,sBrightness));}
+      else{mat.map=null;mat.color.setRGB(0.83*sBrightness,0.82*sBrightness,0.80*sBrightness);}
+      if(normTex){const nt=normTex.clone();nt.wrapS=nt.wrapT=THREE.RepeatWrapping;nt.repeat.set(physRepeat,physRepeat);nt.needsUpdate=true;mat.normalMap=nt;mat.normalScale.set(sNorm,sNorm);}else{mat.normalMap=null;}
+      if(roughTex){const rt=roughTex.clone();rt.wrapS=rt.wrapT=THREE.RepeatWrapping;rt.repeat.set(physRepeat,physRepeat);rt.needsUpdate=true;mat.roughnessMap=rt;}else{mat.roughnessMap=null;}
+      mat.roughness=sRoughness;mat.metalness=sMetalness;mat.sheen=sSheen;mat.needsUpdate=true;
+      if(Array.isArray(entry.mesh.material)){const arr=[...entry.mesh.material];arr[entry.matIndex]=mat;entry.mesh.material=arr;}
     });
-
-    markDirty();
-    showToast(item.name + ' applied!');
+    markDirty(); showToast(item.name+' applied!');
   } catch(e) {
-    console.error(e);
-    showToast('Failed to apply material');
+    console.error(e); showToast('Failed to apply material');
   } finally {
     document.getElementById('loading').classList.remove('on');
+  }
+}
+
+// Click apply (product mode — uses checked entries)
+async function applySwatch(gi, ii, btnEl) {
+  const item = LIBRARY[currentModelKey][gi].items[ii];
+  const checked = meshEntries.filter(e=>e.checked);
+  if(!checked.length) { showToast('Select a part →'); return; }
+  if(activeBtnEl) activeBtnEl.classList.remove('active');
+  activeBtnEl = btnEl; btnEl.classList.add('active');
+  lastAppliedItem = item;
+  await applySwatchToEntries(item, checked);
+}
+
+// ── Drag & Drop ────────────────────────────────────────────────────────────
+function initDragDrop() {
+  const vwrap = document.getElementById('viewport-wrap');
+
+  document.addEventListener('mousemove', e => {
+    if(!dragActive) return;
+    ghost.style.left = e.clientX + 'px';
+    ghost.style.top  = e.clientY + 'px';
+    // Check if over canvas
+    const rect = vwrap.getBoundingClientRect();
+    if(e.clientX>=rect.left && e.clientX<=rect.right && e.clientY>=rect.top && e.clientY<=rect.bottom) {
+      vwrap.classList.add('drag-over');
+      document.getElementById('drop-hint').classList.add('show');
+      highlightHoveredMesh(e, rect);
+    } else {
+      vwrap.classList.remove('drag-over');
+      document.getElementById('drop-hint').classList.remove('show');
+      clearMeshHighlight();
+    }
+  });
+
+  document.addEventListener('mouseup', e => {
+    if(!dragActive) return;
+    dragActive = false;
+    ghost.style.display = 'none';
+    vwrap.classList.remove('drag-over');
+    document.getElementById('drop-hint').classList.remove('show');
+
+    const rect = vwrap.getBoundingClientRect();
+    if(e.clientX>=rect.left && e.clientX<=rect.right && e.clientY>=rect.top && e.clientY<=rect.bottom) {
+      dropFabricOnCanvas(e, rect);
+    }
+    clearMeshHighlight();
+    dragItem = null;
+  });
+}
+
+let hoveredEntry = null;
+function screenToNDC(e, rect) {
+  return {
+    x: ((e.clientX - rect.left) / rect.width)  * 2 - 1,
+    y: -((e.clientY - rect.top)  / rect.height) * 2 + 1,
+  };
+}
+function getHitEntry(e, rect) {
+  const ndc = screenToNDC(e, rect);
+  mouse.set(ndc.x, ndc.y);
+  raycaster.setFromCamera(mouse, camera);
+  const meshes = meshEntries.map(en=>en.mesh).filter(Boolean);
+  const hits = raycaster.intersectObjects(meshes, true);
+  if(!hits.length) return null;
+  const hitMesh = hits[0].object;
+  return meshEntries.find(en=>en.mesh===hitMesh || hitMesh.parent===en.mesh);
+}
+function highlightHoveredMesh(e, rect) {
+  const entry = getHitEntry(e, rect);
+  if(entry === hoveredEntry) return;
+  clearMeshHighlight();
+  hoveredEntry = entry;
+  if(hoveredEntry) {
+    hoveredEntry.greyMat.emissive = new THREE.Color(0x2d4a3e);
+    hoveredEntry.greyMat.emissiveIntensity = 0.35;
+    hoveredEntry.greyMat.needsUpdate = true;
+    markDirty();
+  }
+}
+function clearMeshHighlight() {
+  if(hoveredEntry) {
+    hoveredEntry.greyMat.emissive = new THREE.Color(0);
+    hoveredEntry.greyMat.emissiveIntensity = 0;
+    hoveredEntry.greyMat.needsUpdate = true;
+    markDirty();
+    hoveredEntry = null;
+  }
+}
+async function dropFabricOnCanvas(e, rect) {
+  if(!dragItem) return;
+  const entry = getHitEntry(e, rect);
+  if(!entry) { showToast('Drop on a furniture part'); return; }
+  // In product mode: auto-select the hit entry but KEEP other already-checked entries too.
+  // Only select this entry if nothing is currently checked, so the user's prior selections stay.
+  if(!roomMode) {
+    const anyChecked = meshEntries.some(en=>en.checked);
+    if(!anyChecked) {
+      // Nothing selected yet — select just the hit mesh
+      entry.checked = true;
+      const matArr = Array.isArray(entry.mesh.material)?[...entry.mesh.material]:[entry.mesh.material];
+      if(entry.matIndex>=0&&entry.matIndex<matArr.length){matArr[entry.matIndex]=entry.greyMat;entry.mesh.material=matArr;}
+      buildMeshList();
+    }
+    // Apply fabric to only this specific mesh regardless of other selections
+    await applySwatchToEntries(dragItem.item, [entry]);
+  } else {
+    await applySwatchToEntries(dragItem.item, [entry]);
+  }
+}
+
+function startDrag(e, gi, ii) {
+  const item = LIBRARY[currentModelKey][gi].items[ii];
+  dragItem = {gi, ii, item};
+  dragActive = true;
+  ghost.style.display = 'block';
+  ghost.style.left = e.clientX + 'px';
+  ghost.style.top  = e.clientY + 'px';
+  if(item.img) {
+    ghostImg.src = item.img;
+    ghostImg.style.display = 'block';
+    ghost.style.background = 'none';
+  } else {
+    ghostImg.style.display = 'none';
+    ghost.style.background = item.hex || '#aaa';
   }
 }
 
 // ── Slider handlers ───────────────────────────────────────────────────────
 function updateBrightness(val) {
   sBrightness = val;
-  document.getElementById('v-brightness').textContent = val.toFixed(2);
+  ['v-brightness','v-brightness-r'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=val.toFixed(2); });
   meshEntries.forEach(entry => {
-    if(!entry.checked) return;
+    if(!entry.checked && !entry.pieceSelected) return;
     const mat = entry.greyMat;
-    // App.tsx pattern: if texture map exists, tint white × brightness;
-    // if no map (solid color mode), tint baseColorHex × brightness.
     const safeVal = Math.max(0.01, val);
-    if(mat.map) {
-      mat.color.setRGB(safeVal, safeVal, safeVal);
-    } else {
-      const c = new THREE.Color(baseColorHex || '#ffffff');
-      mat.color.copy(c).multiplyScalar(safeVal);
-    }
+    if(mat.map) mat.color.setRGB(safeVal,safeVal,safeVal);
+    else { const c=new THREE.Color(baseColorHex||'#ffffff'); mat.color.copy(c).multiplyScalar(safeVal); }
     mat.needsUpdate = true;
   });
   markDirty();
 }
-
 function applyProp(prop, val) {
   const valEl = document.getElementById('v-'+prop);
   if(valEl) valEl.textContent = val.toFixed(2);
@@ -912,38 +963,33 @@ function applyProp(prop, val) {
   if(prop==='metalness') sMetalness=val;
   if(prop==='sheen')     sSheen=val;
   meshEntries.forEach(entry => {
-    if(!entry.checked) return;
-    if(prop==='sheen') entry.greyMat.sheen = val;
-    else entry.greyMat[prop] = val;
-    entry.greyMat.needsUpdate = true;
+    if(!entry.checked && !entry.pieceSelected) return;
+    if(prop==='sheen') entry.greyMat.sheen=val;
+    else entry.greyMat[prop]=val;
+    entry.greyMat.needsUpdate=true;
   });
   markDirty();
 }
-
 function updateTexScale(val) {
   sScale = val;
-  document.getElementById('v-scale').textContent = val.toFixed(1);
+  ['v-scale','v-scale-r'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=val.toFixed(1); });
   meshEntries.forEach(entry => {
-    if(!entry.checked) return;
-    const physRepeat = val * (entry.uvScaleFactor / BASE_TILE);
+    if(!entry.checked && !entry.pieceSelected) return;
+    const physRepeat = val*(entry.uvScaleFactor/BASE_TILE);
     const mat = entry.greyMat;
-    if(mat.map && mat.map !== entry.origGreyscaleMap) { mat.map.repeat.set(physRepeat,physRepeat); mat.map.needsUpdate=true; }
-    if(mat.normalMap)    { mat.normalMap.repeat.set(physRepeat,physRepeat);    mat.normalMap.needsUpdate=true; }
-    if(mat.roughnessMap) { mat.roughnessMap.repeat.set(physRepeat,physRepeat); mat.roughnessMap.needsUpdate=true; }
-    mat.needsUpdate = true;
+    if(mat.map)         { mat.map.repeat.set(physRepeat,physRepeat); mat.map.needsUpdate=true; }
+    if(mat.normalMap)   { mat.normalMap.repeat.set(physRepeat,physRepeat); mat.normalMap.needsUpdate=true; }
+    if(mat.roughnessMap){ mat.roughnessMap.repeat.set(physRepeat,physRepeat); mat.roughnessMap.needsUpdate=true; }
+    mat.needsUpdate=true;
   });
   markDirty();
 }
-
 function updateNormScale(val) {
   sNorm = val;
-  document.getElementById('v-norm').textContent = val.toFixed(1);
+  const el = document.getElementById('v-norm'); if(el) el.textContent=val.toFixed(1);
   meshEntries.forEach(entry => {
-    if(!entry.checked) return;
-    if(entry.greyMat.normalMap) {
-      entry.greyMat.normalScale.set(val,val);
-      entry.greyMat.needsUpdate = true;
-    }
+    if(!entry.checked && !entry.pieceSelected) return;
+    if(entry.greyMat.normalMap){ entry.greyMat.normalScale.set(val,val); entry.greyMat.needsUpdate=true; }
   });
   markDirty();
 }
@@ -954,111 +1000,98 @@ function buildMeshList() {
   const list = document.getElementById('mesh-list');
   list.innerHTML = '';
   if(!meshEntries.length) { list.innerHTML='<div style="font-size:11px;color:var(--text-muted)">No parts found</div>'; return; }
-
   meshEntries.forEach((entry,i) => {
-    // Names are already finalised (disambiguated + remapped) in processGLTF
-    entry.displayName = entry.name;
-
-    const dot = dotColors[i % dotColors.length];
+    const dot = dotColors[i%dotColors.length];
     const row = document.createElement('label');
-    row.className = 'mesh-item' + (entry.checked?' sel':'');
-
+    row.className = 'mesh-item'+(entry.checked?' sel':'');
     const cb = document.createElement('input');
     cb.type='checkbox'; cb.checked=entry.checked;
     cb.addEventListener('change',()=>toggleCheck(entry.id, cb.checked));
-
     const dotEl = document.createElement('div');
     dotEl.className='mesh-dot'; dotEl.style.backgroundColor=dot;
-
     const txt = document.createElement('span');
     txt.textContent = entry.name;
-
-    // Hover highlight (from App.tsx)
-    row.addEventListener('mouseenter',()=>{
-      entry.greyMat.emissive = new THREE.Color(0x444400);
-      entry.greyMat.emissiveIntensity = 0.25;
-      entry.greyMat.needsUpdate = true;
-      if(!entry.checked) {
-        const o = entry.origMat;
-        if(o.emissive!==undefined){ o._prevEmissive=o.emissive.clone(); o.emissive=new THREE.Color(0x444400); o.emissiveIntensity=0.25; o.needsUpdate=true; }
-      }
-      markDirty();
-    });
-    row.addEventListener('mouseleave',()=>{
-      entry.greyMat.emissive = new THREE.Color(0x000000);
-      entry.greyMat.emissiveIntensity = 0;
-      entry.greyMat.needsUpdate = true;
-      if(!entry.checked) {
-        const o = entry.origMat;
-        if(o._prevEmissive!==undefined){ o.emissive=o._prevEmissive; o.emissiveIntensity=0; o.needsUpdate=true; }
-      }
-      markDirty();
-    });
-
+    row.addEventListener('mouseenter',()=>{ entry.greyMat.emissive=new THREE.Color(0x444400);entry.greyMat.emissiveIntensity=0.25;entry.greyMat.needsUpdate=true;markDirty(); });
+    row.addEventListener('mouseleave',()=>{ entry.greyMat.emissive=new THREE.Color(0);entry.greyMat.emissiveIntensity=0;entry.greyMat.needsUpdate=true;markDirty(); });
     row.appendChild(cb); row.appendChild(dotEl); row.appendChild(txt);
+    list.appendChild(row);
+  });
+}
+
+function buildPieceList() {
+  const list = document.getElementById('piece-list');
+  list.innerHTML = '';
+  if(!meshEntries.length) { list.innerHTML='<div style="font-size:11px;color:var(--text-muted)">No parts loaded</div>'; return; }
+  meshEntries.forEach((entry,i) => {
+    const dot = dotColors[i%dotColors.length];
+    const row = document.createElement('div');
+    row.className='piece-item'+(entry.pieceSelected?' sel-piece':'');
+    const dotEl=document.createElement('div');
+    dotEl.className='piece-dot'; dotEl.style.backgroundColor=dot;
+    const txt=document.createElement('span'); txt.textContent=entry.name;
+    row.appendChild(dotEl); row.appendChild(txt);
+    row.addEventListener('click',()=>{
+      meshEntries.forEach(e=>{ e.pieceSelected=false; });
+      entry.pieceSelected = true;
+      buildPieceList();
+      // Flash
+      entry.greyMat.emissive=new THREE.Color(0x2d4a3e);entry.greyMat.emissiveIntensity=0.4;entry.greyMat.needsUpdate=true;markDirty();
+      setTimeout(()=>{ entry.greyMat.emissive=new THREE.Color(0);entry.greyMat.emissiveIntensity=0;entry.greyMat.needsUpdate=true;markDirty(); },700);
+    });
+    row.addEventListener('mouseenter',()=>{ entry.greyMat.emissive=new THREE.Color(0x444400);entry.greyMat.emissiveIntensity=0.2;entry.greyMat.needsUpdate=true;markDirty(); });
+    row.addEventListener('mouseleave',()=>{ if(!entry.pieceSelected){entry.greyMat.emissive=new THREE.Color(0);entry.greyMat.emissiveIntensity=0;entry.greyMat.needsUpdate=true;markDirty();} });
     list.appendChild(row);
   });
 }
 
 function toggleCheck(id, checked) {
   meshEntries = meshEntries.map(entry => {
-    if(entry.id !== id) return entry;
-    const ne = {...entry, checked};
-    const matArr = Array.isArray(ne.mesh.material) ? [...ne.mesh.material] : [ne.mesh.material];
-    if(ne.matIndex>=0 && ne.matIndex<matArr.length) {
-      matArr[ne.matIndex] = checked ? ne.greyMat : ne.origMat;
-      ne.mesh.material = matArr;
-    }
-    // Flash emissive (App.tsx pattern)
-    if(checked) {
-      ne.greyMat.emissive = new THREE.Color(0x666600);
-      ne.greyMat.emissiveIntensity = 0.3;
-      ne.greyMat.needsUpdate = true;
-      setTimeout(()=>{ ne.greyMat.emissive=new THREE.Color(0); ne.greyMat.emissiveIntensity=0; ne.greyMat.needsUpdate=true; markDirty(); }, 600);
-    }
+    if(entry.id!==id) return entry;
+    const ne={...entry, checked};
+    const matArr=Array.isArray(ne.mesh.material)?[...ne.mesh.material]:[ne.mesh.material];
+    if(ne.matIndex>=0&&ne.matIndex<matArr.length){ matArr[ne.matIndex]=checked?ne.greyMat:ne.origMat; ne.mesh.material=matArr; }
+    if(checked){ne.greyMat.emissive=new THREE.Color(0x666600);ne.greyMat.emissiveIntensity=0.3;ne.greyMat.needsUpdate=true;setTimeout(()=>{ne.greyMat.emissive=new THREE.Color(0);ne.greyMat.emissiveIntensity=0;ne.greyMat.needsUpdate=true;markDirty();},600);}
     return ne;
   });
-  buildMeshList();
-  markDirty();
+  buildMeshList(); markDirty();
 }
-
 function selectAll() {
-  meshEntries.forEach(entry => {
-    entry.checked = true;
-    const matArr = Array.isArray(entry.mesh.material)?[...entry.mesh.material]:[entry.mesh.material];
-    if(entry.matIndex>=0&&entry.matIndex<matArr.length){ matArr[entry.matIndex]=entry.greyMat; entry.mesh.material=matArr; }
-  });
+  meshEntries.forEach(entry=>{ entry.checked=true; const a=Array.isArray(entry.mesh.material)?[...entry.mesh.material]:[entry.mesh.material]; if(entry.matIndex>=0&&entry.matIndex<a.length){a[entry.matIndex]=entry.greyMat;entry.mesh.material=a;} });
   buildMeshList(); markDirty();
 }
 function deselectAll() {
-  meshEntries.forEach(entry => {
-    entry.checked = false;
-    const matArr = Array.isArray(entry.mesh.material)?[...entry.mesh.material]:[entry.mesh.material];
-    if(entry.matIndex>=0&&entry.matIndex<matArr.length){ matArr[entry.matIndex]=entry.origMat; entry.mesh.material=matArr; }
-  });
+  meshEntries.forEach(entry=>{ entry.checked=false; const a=Array.isArray(entry.mesh.material)?[...entry.mesh.material]:[entry.mesh.material]; if(entry.matIndex>=0&&entry.matIndex<a.length){a[entry.matIndex]=entry.origMat;entry.mesh.material=a;} });
   buildMeshList(); markDirty();
 }
 
-// ── GLB Processing (from App.tsx exactly) ─────────────────────────────────
+// ── GLB Processing ────────────────────────────────────────────────────────
 function processGLTF(gltf) {
   try {
     if(currentModel) scene.remove(currentModel);
     currentModel = gltf.scene;
-
-    // Scale & center
     const box = new THREE.Box3().setFromObject(currentModel);
     const sz = box.getSize(new THREE.Vector3());
-    const sc = 1.6 / Math.max(sz.x,sz.y,sz.z);
+    const sc = 1.6/Math.max(sz.x,sz.y,sz.z);
     currentModel.scale.setScalar(sc);
     const box2 = new THREE.Box3().setFromObject(currentModel);
     const ctr = box2.getCenter(new THREE.Vector3());
     currentModel.position.sub(ctr);
     currentModel.updateMatrixWorld(true);
-    scene.add(currentModel);
 
+    if(roomMode && roomGroup) {
+      // Seat furniture on the floor: floor is at y = -1.6
+      // After centering, the model bottom is at y = -halfHeight
+      // We want bottom at y = -1.6, so shift down by (halfHeight - 1.6) additional
+      const finalBox = new THREE.Box3().setFromObject(currentModel);
+      const bottomY = finalBox.min.y; // current bottom in world space (approx -halfHeight)
+      const floorY = -1.6;
+      currentModel.position.y += (floorY - bottomY);
+    }
+
+    scene.add(currentModel);
     const worldBox = new THREE.Box3().setFromObject(currentModel);
     const worldCenter = worldBox.getCenter(new THREE.Vector3());
-    const worldSize = worldBox.getSize(new THREE.Vector3());
+    const worldSize   = worldBox.getSize(new THREE.Vector3());
 
     const newEntries = [];
     let meshCounter = 0;
@@ -1066,131 +1099,94 @@ function processGLTF(gltf) {
     currentModel.traverse(child => {
       if(!child.isMesh) return;
       const mesh = child;
-
-      // Normalize materials to array (App.tsx pattern)
       let materials;
-      if(!Array.isArray(mesh.material)) {
+      if(!Array.isArray(mesh.material)){
         materials = mesh.material ? [mesh.material] : [new THREE.MeshStandardMaterial({color:0xcccccc})];
-        if(mesh.geometry.groups.length===0) {
-          const count = mesh.geometry.index ? mesh.geometry.index.count : mesh.geometry.attributes.position.count;
-          mesh.geometry.addGroup(0,count,0);
-        }
-      } else {
-        materials = mesh.material;
-      }
+        if(mesh.geometry.groups.length===0){const count=mesh.geometry.index?mesh.geometry.index.count:mesh.geometry.attributes.position.count;mesh.geometry.addGroup(0,count,0);}
+      } else { materials = mesh.material; }
       mesh.material = materials;
 
       materials.forEach((origMat, index) => {
         if(!origMat) origMat = new THREE.MeshStandardMaterial({color:0xcccccc});
-
-        // Clone origMat — preserve shader type (App.tsx critical comment)
         const greyMat = origMat.clone();
-        greyMat.onBeforeCompile = ()=>{};
-        greyMat.customProgramCacheKey = ()=>greyMat.uuid;
-
-        // Clear all maps, set grey base
+        greyMat.onBeforeCompile=()=>{}; greyMat.customProgramCacheKey=()=>greyMat.uuid;
         greyMat.color.set(0xd4d0cc);
-        greyMat.map=null; greyMat.normalMap=null; greyMat.roughnessMap=null; greyMat.metalnessMap=null;
-        if(greyMat.emissiveMap!==undefined)  greyMat.emissiveMap=null;
-        if(greyMat.aoMap!==undefined)        greyMat.aoMap=null;
-        if(greyMat.alphaMap!==undefined)     greyMat.alphaMap=null;
-        if(greyMat.bumpMap!==undefined)      greyMat.bumpMap=null;
-        greyMat.transparent=false; greyMat.opacity=1.0; greyMat.alphaTest=0;
-        greyMat.depthWrite=true; greyMat.visible=true; greyMat.side=THREE.DoubleSide;
-        greyMat.roughness=0.75; greyMat.metalness=0.0;
-        if(greyMat.emissive)            greyMat.emissive.set(0x000000);
-        if(greyMat.emissiveIntensity!==undefined) greyMat.emissiveIntensity=0;
-        if(greyMat.sheen!==undefined)   greyMat.sheen=0;
-        if(greyMat.clearcoat!==undefined) greyMat.clearcoat=0;
-        if(greyMat.transmission!==undefined) greyMat.transmission=0;
+        greyMat.map=null;greyMat.normalMap=null;greyMat.roughnessMap=null;greyMat.metalnessMap=null;
+        if(greyMat.emissiveMap!==undefined)greyMat.emissiveMap=null;
+        if(greyMat.aoMap!==undefined)greyMat.aoMap=null;
+        if(greyMat.alphaMap!==undefined)greyMat.alphaMap=null;
+        if(greyMat.bumpMap!==undefined)greyMat.bumpMap=null;
+        greyMat.transparent=false;greyMat.opacity=1;greyMat.alphaTest=0;
+        greyMat.depthWrite=true;greyMat.visible=true;greyMat.side=THREE.DoubleSide;
+        greyMat.roughness=0.75;greyMat.metalness=0;
+        if(greyMat.emissive)greyMat.emissive.set(0);
+        if(greyMat.emissiveIntensity!==undefined)greyMat.emissiveIntensity=0;
+        if(greyMat.sheen!==undefined)greyMat.sheen=0;
+        if(greyMat.clearcoat!==undefined)greyMat.clearcoat=0;
+        if(greyMat.transmission!==undefined)greyMat.transmission=0;
+        let origGreyscaleMap=null;
+        if(origMat.map){origGreyscaleMap=makeGreyscaleTex(origMat.map);if(origGreyscaleMap)greyMat.map=origGreyscaleMap;}
+        greyMat.needsUpdate=true;
 
-        // Apply greyscale diffuse from original (App.tsx pattern)
-        let origGreyscaleMap = null;
-        if(origMat.map) {
-          origGreyscaleMap = makeGreyscaleTex(origMat.map);
-          if(origGreyscaleMap) greyMat.map = origGreyscaleMap;
-        }
-        greyMat.needsUpdate = true;
-
-        // ── Mesh naming (App.tsx heuristics) ─────────────────────────────
-        const KNOWN = {'wooden frame':'Wooden Frame','seat cushion':'Seat Cushion','back cushion':'Back Cushion'};
-        let cleanName = '';
-        let _n = mesh;
-        while(_n){ const k=(_n.name||'').trim().toLowerCase(); if(KNOWN[k]){cleanName=KNOWN[k];break;} _n=_n.parent; }
+        const KNOWN={'wooden frame':'Wooden Frame','seat cushion':'Seat Cushion','back cushion':'Back Cushion'};
+        let cleanName='';
+        let _n=mesh;
+        while(_n){const k=(_n.name||'').trim().toLowerCase();if(KNOWN[k]){cleanName=KNOWN[k];break;}_n=_n.parent;}
 
         mesh.geometry.computeBoundingBox();
-        const meshBox = new THREE.Box3().setFromObject(mesh);
-        const mc = meshBox.getCenter(new THREE.Vector3());
-        const ms = meshBox.getSize(new THREE.Vector3());
-        const wc=worldCenter, ws=worldSize;
-        const relY=(mc.y-wc.y)/(ws.y*0.5), relZ=(mc.z-wc.z)/(ws.z*0.5), relX=(mc.x-wc.x)/(ws.x*0.5);
+        const meshBox=new THREE.Box3().setFromObject(mesh);
+        const mc=meshBox.getCenter(new THREE.Vector3());
+        const ms=meshBox.getSize(new THREE.Vector3());
+        const wc=worldCenter,ws=worldSize;
+        const relY=(mc.y-wc.y)/(ws.y*0.5),relZ=(mc.z-wc.z)/(ws.z*0.5),relX=(mc.x-wc.x)/(ws.x*0.5);
         const absX=Math.abs(relX);
         const dims=[ms.x,ms.y,ms.z].sort((a,b)=>a-b);
         const flatness=dims[2]>0?dims[0]/dims[2]:1;
-        const meshVol=ms.x*ms.y*ms.z, worldVol=ws.x*ws.y*ws.z, volRatio=worldVol>0?meshVol/worldVol:0;
+        const meshVol=ms.x*ms.y*ms.z,worldVol=ws.x*ws.y*ws.z,volRatio=worldVol>0?meshVol/worldVol:0;
 
-        if(cleanName){}
-        else if(relY<-0.55) cleanName='Legs / Base';
-        else if(relZ<-0.35&&relY>-0.3) cleanName='Backrest';
-        else if(absX>0.55&&relY>-0.4) cleanName=relX>0?'Right Armrest':'Left Armrest';
-        else if(relZ>0.0&&relY>-0.3&&relY<0.4&&absX<0.5) cleanName='Seat Cushion';
-        else if(flatness<0.06||volRatio<0.0008) cleanName='Stitching';
-        else if(relY<-0.35&&volRatio<0.02) cleanName='Legs / Base';
-        else if(volRatio>0.12) cleanName='Main Body';
-        else if(relY>-0.1&&relY<0.55&&absX<0.55) cleanName='Body Panel';
-        else cleanName='Frame';
+        if(!cleanName){
+          if(relY<-0.55) cleanName='Legs / Base';
+          else if(relZ<-0.35&&relY>-0.3) cleanName='Backrest';
+          else if(absX>0.55&&relY>-0.4) cleanName=relX>0?'Right Armrest':'Left Armrest';
+          else if(relZ>0.0&&relY>-0.3&&relY<0.4&&absX<0.5) cleanName='Seat Cushion';
+          else if(flatness<0.06||volRatio<0.0008) cleanName='Stitching';
+          else if(relY<-0.35&&volRatio<0.02) cleanName='Legs / Base';
+          else if(volRatio>0.12) cleanName='Main Body';
+          else if(relY>-0.1&&relY<0.55&&absX<0.55) cleanName='Body Panel';
+          else cleanName='Frame';
+        }
 
-        const maxDim = Math.max(ms.x,ms.y,ms.z);
-        const uvScaleFactor = maxDim>0?maxDim:1;
-
-        newEntries.push({ id:`m-${meshCounter}-${index}`, name:cleanName, mesh, matIndex:index, origMat, greyMat, origGreyscaleMap, checked:false, uvScaleFactor });
+        const maxDim=Math.max(ms.x,ms.y,ms.z);
+        const uvScaleFactor=maxDim>0?maxDim:1;
+        newEntries.push({id:`m-${meshCounter}-${index}`,name:cleanName,mesh,matIndex:index,origMat,greyMat,origGreyscaleMap,checked:false,pieceSelected:false,uvScaleFactor});
         meshCounter++;
       });
     });
 
-    // ── Rename duplicates then apply per-model display name maps ──────────
-    // Step 1: count occurrences to detect which are duplicated
-    const rawCounts = {};
-    newEntries.forEach(e => { rawCounts[e.name] = (rawCounts[e.name]||0)+1; });
-    const rawIdx = {};
-    newEntries.forEach(e => {
-      if(rawCounts[e.name] > 1) {
-        rawIdx[e.name] = (rawIdx[e.name]||0)+1;
-        e.name = e.name + ' ' + rawIdx[e.name]; // e.g. "Main Body 1", "Main Body 2"
-      }
-    });
-
-    // Step 2: per-model rename maps  (heuristic name → desired display name)
-    // Chair:  Backrest = Backrest | Main Body 1 = Seat Cushion | Main Body 2 = Armrest & Legs
-    // Sofa:   Main Body 1 = Sofa Frame | Main Body 2 = Decorative Cushion | Seat Cushion = Sofa Seat
-    const RENAME = {
-      chair: {
-        'Backrest':    'Backrest',
-        'Main Body 1': 'Seat Cushion',
-        'Main Body 2': 'Armrest & Legs',
-      },
-      sofa: {
-        'Main Body 1':   'Sofa Frame',
-        'Main Body 2':   'Decorative Cushion',
-        'Seat Cushion':  'Sofa Seat',
-      },
+    const rawCounts={};
+    newEntries.forEach(e=>{rawCounts[e.name]=(rawCounts[e.name]||0)+1;});
+    const rawIdx={};
+    newEntries.forEach(e=>{if(rawCounts[e.name]>1){rawIdx[e.name]=(rawIdx[e.name]||0)+1;e.name=e.name+' '+rawIdx[e.name];}});
+    const RENAME={
+      chair:{'Backrest':'Backrest','Main Body 1':'Seat Cushion','Main Body 2':'Armrest & Legs'},
+      sofa:{'Main Body 1':'Sofa Frame','Main Body 2':'Decorative Cushion','Seat Cushion':'Sofa Seat'},
     };
-    const remap = RENAME[currentModelKey] || {};
-    newEntries.forEach(e => {
-      if(remap[e.name]) e.name = remap[e.name];
-    });
+    const remap=RENAME[currentModelKey]||{};
+    newEntries.forEach(e=>{if(remap[e.name])e.name=remap[e.name];});
 
     meshEntries = newEntries;
-
     buildMeshList();
-    sph={theta:0.4,phi:1.15,r:2.2}; tgt.set(0,0,0); camUpdate();
+    buildPieceList();
+
+    if(!roomMode){
+      sph={theta:0.4,phi:1.15,r:2.2}; tgt.set(0,0,0); camUpdate();
+    }
+
     markDirty();
     document.getElementById('loading').classList.remove('on');
     document.getElementById('v-hint').style.display='flex';
-
-    // Reset sliders
-    setSliderVal('brightness',1); setSliderVal('roughness',0.72); setSliderVal('metalness',0);
-    setSliderVal('sheen',0,2); setSliderVal('scale',10,1); setSliderVal('norm',1,1);
+    setSliderVal('brightness',1);setSliderVal('roughness',0.72);setSliderVal('metalness',0);
+    setSliderVal('sheen',0,2);setSliderVal('scale',10,1);setSliderVal('norm',1,1);
   } catch(e) {
     console.error('processGLTF error:', e);
     document.getElementById('loading').classList.remove('on');
@@ -1198,40 +1194,35 @@ function processGLTF(gltf) {
   }
 }
 
-// ── Load model by URL ──────────────────────────────────────────────────────
 function loadModel(url) {
   document.getElementById('loading').classList.add('on');
   document.getElementById('load-txt').textContent = 'Loading Model…';
   document.getElementById('v-hint').style.display='none';
-  meshEntries = [];
-  if(activeBtnEl){ activeBtnEl.classList.remove('active'); activeBtnEl=null; }
+  meshEntries=[];
+  if(activeBtnEl){activeBtnEl.classList.remove('active');activeBtnEl=null;}
   document.getElementById('app-name').textContent='— none —';
   document.getElementById('app-vend').textContent='';
   document.getElementById('app-sw').innerHTML='';
   document.getElementById('app-sw').style.background='var(--border)';
-
-  gltfLoader.load(url, gltf => processGLTF(gltf), undefined, err => {
+  gltfLoader.load(url, gltf=>processGLTF(gltf), undefined, err=>{
     console.error(err);
     document.getElementById('loading').classList.remove('on');
     showToast('Failed to load model');
   });
 }
 
-// ── Model switch ──────────────────────────────────────────────────────────
 function switchModel(key) {
-  currentModelKey = key;
-  document.getElementById('tab-chair').classList.toggle('active', key==='chair');
-  document.getElementById('tab-sofa').classList.toggle('active',  key==='sofa');
-  document.getElementById('lib-title').textContent = key==='chair'?'Chair Fabrics':'Sofa Fabrics';
-  document.getElementById('lib-sub').textContent   = key==='chair'?'MityLite Sierra Collection':'Douglass & Ennis Fabrics';
+  currentModelKey=key;
+  document.getElementById('tab-chair').classList.toggle('active',key==='chair');
+  document.getElementById('tab-sofa').classList.toggle('active',key==='sofa');
+  document.getElementById('lib-title').textContent=key==='chair'?'Chair Fabrics':'Sofa Fabrics';
   buildLibrary();
-  loadModel(key==='chair' ? CHAIR_GLB : SOFA_GLB);
+  loadModel(key==='chair'?CHAIR_GLB:SOFA_GLB);
 }
 
-// ── Reset ─────────────────────────────────────────────────────────────────
 function resetAll() {
   deselectAll();
-  if(activeBtnEl){ activeBtnEl.classList.remove('active'); activeBtnEl=null; }
+  if(activeBtnEl){activeBtnEl.classList.remove('active');activeBtnEl=null;}
   document.getElementById('app-name').textContent='— none —';
   document.getElementById('app-vend').textContent='';
   document.getElementById('app-sw').innerHTML='';
@@ -1242,164 +1233,324 @@ function resetAll() {
 // ── Build fabric library UI ───────────────────────────────────────────────
 function buildLibrary() {
   const scroll = document.getElementById('fab-scroll');
-  scroll.innerHTML = '';
+  scroll.innerHTML='';
   const groups = LIBRARY[currentModelKey];
   groups.forEach((group, gi) => {
-    const gEl = document.createElement('div');
-    gEl.className = 'p-group';
-
-    const hdr = document.createElement('div');
-    hdr.className = 'p-group-hdr';
-    hdr.innerHTML = `
-      <div>
-        <div class="p-name">${group.group}</div>
-        <div style="margin-top:3px"><span class="vbadge ${group.vclass}">${group.vendor}</span></div>
-      </div>
-      <div class="p-arrow">▾</div>`;
-    hdr.onclick = () => gEl.classList.toggle('collapsed');
-
-    const swGrid = document.createElement('div');
-    swGrid.className = 'p-swatches';
-
-    group.items.forEach((item, ii) => {
-      const btn = document.createElement('div');
-      btn.className = 'sw-btn';
-      btn.dataset.gi = gi;
-      btn.dataset.ii = ii;
-
-      const tip = document.createElement('div');
-      tip.className = 'sw-tip';
-      tip.textContent = item.name;
-
-      if(item.img) {
-        const img = document.createElement('img');
-        img.src = item.img;
-        img.alt = item.name;
-        img.loading = 'lazy';
-        img.crossOrigin = 'anonymous';
-        img.onerror = () => {
-          img.remove();
-          const cd = document.createElement('div');
-          cd.className='sw-color'; cd.style.background=item.hex||'#aaa';
-          btn.insertBefore(cd, tip);
-        };
+    const gEl=document.createElement('div');
+    gEl.className='p-group';
+    const hdr=document.createElement('div');
+    hdr.className='p-group-hdr';
+    hdr.innerHTML=`<div><div class="p-name">${group.group}</div><div style="margin-top:3px"><span class="vbadge ${group.vclass}">${group.vendor}</span></div></div><div class="p-arrow">▾</div>`;
+    hdr.onclick=()=>gEl.classList.toggle('collapsed');
+    const swGrid=document.createElement('div');
+    swGrid.className='p-swatches';
+    group.items.forEach((item, ii)=>{
+      const btn=document.createElement('div');
+      btn.className='sw-btn';
+      btn.dataset.gi=gi; btn.dataset.ii=ii;
+      btn.draggable=false; // we handle mousedown manually
+      const tip=document.createElement('div');
+      tip.className='sw-tip'; tip.textContent=item.name;
+      if(item.img){
+        const img=document.createElement('img');
+        img.src=item.img; img.alt=item.name; img.loading='lazy'; img.crossOrigin='anonymous';
+        img.onerror=()=>{img.remove();const cd=document.createElement('div');cd.className='sw-color';cd.style.background=item.hex||'#aaa';btn.insertBefore(cd,tip);};
         btn.appendChild(img);
-      } else if(item.code) {
-        // MityLite: try their CDN image, fallback to hex
-        const img = document.createElement('img');
-        img.src = MITY_IMG + item.code + '.jpg';
-        img.alt = item.name;
-        img.loading = 'lazy';
-        img.crossOrigin = 'anonymous';
-        img.onerror = () => {
-          img.remove();
-          const cd = document.createElement('div');
-          cd.className='sw-color'; cd.style.background=item.hex||'#aaa';
-          btn.insertBefore(cd, tip);
-        };
+      } else if(item.code){
+        const img=document.createElement('img');
+        img.src=MITY_IMG+item.code+'.jpg'; img.alt=item.name; img.loading='lazy'; img.crossOrigin='anonymous';
+        img.onerror=()=>{img.remove();const cd=document.createElement('div');cd.className='sw-color';cd.style.background=item.hex||'#aaa';btn.insertBefore(cd,tip);};
         btn.appendChild(img);
       } else {
-        const cd = document.createElement('div');
+        const cd=document.createElement('div');
         cd.className='sw-color'; cd.style.background=item.hex;
         btn.appendChild(cd);
       }
-
       btn.appendChild(tip);
-      btn.addEventListener('click', () => applySwatch(gi, ii, btn));
+      // Click = normal apply to checked meshes / selected piece
+      btn.addEventListener('click', ()=>{
+        if(roomMode){
+          const selected = meshEntries.filter(e=>e.pieceSelected);
+          if(!selected.length){showToast('Click a piece in the list →');return;}
+          if(activeBtnEl) activeBtnEl.classList.remove('active');
+          activeBtnEl=btn; btn.classList.add('active');
+          applySwatchToEntries(item, selected);
+        } else {
+          applySwatch(gi, ii, btn);
+        }
+      });
+      // Mousedown = start drag
+      btn.addEventListener('mousedown', e=>{ e.preventDefault(); startDrag(e, gi, ii); });
       swGrid.appendChild(btn);
     });
-
-    gEl.appendChild(hdr);
-    gEl.appendChild(swGrid);
-    scroll.appendChild(gEl);
+    gEl.appendChild(hdr); gEl.appendChild(swGrid); scroll.appendChild(gEl);
   });
 }
 
-// ── AI Render Scene ──────────────────────────────────────────────────────
-async function renderScene() {
-  if(!currentModel) { showToast('Load a model first!'); return; }
-  document.getElementById('loading').classList.add('on');
-  document.getElementById('load-txt').textContent = 'Capturing Scene…';
-  try {
-    renderer.render(scene, camera);
-    await new Promise(r => setTimeout(r, 50));
-    const dataUrl = renderer.domElement.toDataURL('image/jpeg', 0.92);
-    let apiAvailable = false;
-    try { const probe = await fetch('/api/generate', { method: 'HEAD' }); apiAvailable = probe.status !== 404; } catch (_) {}
-    if(!apiAvailable) { showToast('Deploy to Vercel to enable AI Rendering'); showRenderedImage(dataUrl, true); return; }
-    document.getElementById('load-txt').textContent = 'Rendering in Living Room…';
-    const response = await fetch('/api/generate', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageData: dataUrl.split(',')[1] }),
-      signal: AbortSignal.timeout(60000)
-    });
-    if(!response.ok) { showToast('Error generating render.'); return; }
-    const result = await response.json();
-    if(result.imageUrl) showRenderedImage(result.imageUrl, false);
-    else showToast('Failed to generate image.');
-  } catch(e) { console.error('Render error:', e); showToast('Error generating render.'); }
-  finally { document.getElementById('loading').classList.remove('on'); }
-}
-function showRenderedImage(imageUrl, isLocal) {
-  const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px)';
-  const md = document.createElement('div');
-  md.style.cssText = 'background:#fff;border-radius:8px;overflow:hidden;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column';
-  const hd = document.createElement('div');
-  hd.style.cssText = 'padding:14px 20px;border-bottom:1px solid #ebebeb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
-  const ti = document.createElement('h2');
-  ti.textContent = isLocal ? 'Scene Preview' : 'AI Render';
-  ti.style.cssText = 'margin:0;font-size:15px;font-weight:600;color:#111;font-family:var(--font-d)';
-  const cb = document.createElement('button');
-  cb.textContent = '×'; cb.style.cssText = 'background:none;border:none;font-size:24px;cursor:pointer;color:#888;padding:0'; cb.onclick = () => document.body.removeChild(ov);
-  const iw = document.createElement('div');
-  iw.style.cssText = 'padding:16px;display:flex;justify-content:center;overflow:auto;flex:1';
-  const im = document.createElement('img');
-  im.src = imageUrl; im.style.cssText = 'max-width:100%;max-height:70vh;object-fit:contain;border-radius:4px';
-  const ft = document.createElement('div');
-  ft.style.cssText = 'padding:14px 20px;border-top:1px solid #ebebeb;display:flex;justify-content:flex-end;align-items:center;flex-shrink:0';
-  const dl = document.createElement('a');
-  dl.href = imageUrl; dl.download = isLocal ? 'preview.png' : 'render.png';
-  dl.style.cssText = 'background:var(--accent);color:#fff;padding:9px 20px;border-radius:var(--r);text-decoration:none;font-size:12px;font-family:var(--font-b)';
-  dl.textContent = isLocal ? 'Download Preview' : 'Download Render';
-  hd.appendChild(ti); hd.appendChild(cb); iw.appendChild(im); ft.appendChild(dl);
-  md.appendChild(hd); md.appendChild(iw); md.appendChild(ft); ov.appendChild(md);
-  ov.addEventListener('click', e => { if(e.target === ov) document.body.removeChild(ov); });
-  document.body.appendChild(ov);
-}
+// ── Room View ─────────────────────────────────────────────────────────────
+function toggleRoomView() {
+  roomMode = !roomMode;
+  const btn = document.getElementById('btn-room-view');
+  btn.classList.toggle('active-view', roomMode);
+  btn.textContent = roomMode ? '× Exit Room' : '🏠 Room View';
 
-// ── Export GLB ────────────────────────────────────────────────────────────
-async function exportGLB() {
-  if(!currentModel){ showToast('No model loaded'); return; }
-  document.getElementById('loading').classList.add('on');
-  document.getElementById('load-txt').textContent = 'Exporting…';
-  try {
-    // Load exporter dynamically
-    if(!THREE.GLTFExporter) {
-      await new Promise((res,rej) => {
-        const s=document.createElement('script');
-        s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js';
-        s.onload=res; s.onerror=rej;
-        document.head.appendChild(s);
-      });
+  document.getElementById('panel-product').style.display = roomMode ? 'none' : 'block';
+  document.getElementById('panel-room').style.display    = roomMode ? 'block' : 'none';
+
+  if(roomMode) {
+    buildRoom();
+    // Camera: step back to see room
+    sph={theta:0.3, phi:0.75, r:7}; tgt.set(0,0.2,0); camUpdate();
+    buildPieceList();
+  } else {
+    removeRoom();
+    sph={theta:0.4,phi:1.15,r:2.2}; tgt.set(0,0,0); camUpdate();
+    // Re-center furniture (undo floor placement)
+    if(currentModel) {
+      currentModel.position.set(0,0,0);
+      // Re-center exactly as processGLTF does
+      const box = new THREE.Box3().setFromObject(currentModel);
+      const ctr = box.getCenter(new THREE.Vector3());
+      currentModel.position.sub(ctr);
+      markDirty();
     }
-    const exporter = new THREE.GLTFExporter();
-    exporter.parse(currentModel, result => {
-      const blob = new Blob([result], {type:'application/octet-stream'});
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = currentModelKey+'_custom.glb';
-      link.click();
-      showToast('Exported!');
-    }, {binary:true});
-  } catch(e) {
-    showToast('Export failed: '+e.message);
-  } finally {
-    document.getElementById('loading').classList.remove('on');
   }
 }
 
-// ── Three.js Init ──────────────────────────────────────────────────────────
+// ── Room geometry ─────────────────────────────────────────────────────────
+function buildRoom() {
+  removeRoom();
+  roomGroup = new THREE.Group();
+
+  const W=6, H=3.2, D=6;
+
+  // Materials
+  const wallMat = new THREE.MeshStandardMaterial({color:0xf5f0ea, roughness:0.9, side:THREE.BackSide});
+  const floorMat= new THREE.MeshStandardMaterial({color:0xd4c4a8, roughness:0.8, metalness:0.02});
+  const trimMat = new THREE.MeshStandardMaterial({color:0xe8e4de, roughness:0.6});
+  const glassMat= new THREE.MeshStandardMaterial({color:0xb8d8e8, roughness:0.05, metalness:0.1, transparent:true, opacity:0.35});
+  const frameMat= new THREE.MeshStandardMaterial({color:0x2a2420, roughness:0.6});
+  const rugMat  = new THREE.MeshStandardMaterial({color:0x8a7060, roughness:0.95});
+
+  // ── Floor
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W,D), floorMat);
+  floor.rotation.x=-Math.PI/2; floor.position.y=-1.6;
+  roomElements.floor=floor; roomGroup.add(floor);
+
+  // ── Ceiling
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(W,D), new THREE.MeshStandardMaterial({color:0xfaf8f5,roughness:0.95}));
+  ceiling.rotation.x=Math.PI/2; ceiling.position.y=1.6;
+  roomElements.ceiling=ceiling; roomGroup.add(ceiling);
+
+  // ── Walls (box inverted normals trick — use BackSide)
+  const roomBox = new THREE.Mesh(new THREE.BoxGeometry(W,H,D), wallMat);
+  roomElements.walls=roomBox; roomGroup.add(roomBox);
+
+  // ── Baseboard trim (front, back, left, right)
+  const bbH=0.1, bbD=0.05;
+  const bbMat = trimMat;
+  [[0,-(H/2-bbH/2),D/2,'z'],[0,-(H/2-bbH/2),-D/2,'z'],[W/2,-(H/2-bbH/2),0,'x'],[-W/2,-(H/2-bbH/2),0,'x']].forEach(([x,y,z,ax])=>{
+    const l = ax==='z'?W:D;
+    const bb = new THREE.Mesh(new THREE.BoxGeometry(l,bbH,bbD), bbMat);
+    bb.position.set(x,y,z);
+    if(ax==='x') bb.rotation.y=Math.PI/2;
+    roomGroup.add(bb);
+  });
+
+  // ── Rug
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), rugMat);
+  rug.rotation.x=-Math.PI/2; rug.position.set(0,-1.595,0.4);
+  roomElements.rug=rug; roomGroup.add(rug);
+
+  // ── Window (back wall, slightly offset)
+  const winGroup = new THREE.Group();
+  winGroup.position.set(-1.2, 0.2, -D/2+0.02);
+  // Frame outer
+  const wFrOuter = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.8, 0.08), frameMat);
+  winGroup.add(wFrOuter);
+  // Glass (inset)
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.45), glassMat);
+  glass.position.z=0.05; winGroup.add(glass);
+  // Cross bar H
+  const wBarH = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.05,0.04), frameMat);
+  wBarH.position.set(0,0,0.05); winGroup.add(wBarH);
+  // Cross bar V
+  const wBarV = new THREE.Mesh(new THREE.BoxGeometry(0.05,1.45,0.04), frameMat);
+  wBarV.position.set(0,0,0.05); winGroup.add(wBarV);
+  // Light from window
+  const winLight = new THREE.RectAreaLight ? null : new THREE.SpotLight(0xfff5e8, 1.2, 8, Math.PI/8, 0.4);
+  if(winLight){ winLight.position.set(-1.2, 0.2, -D/2+1); winLight.lookAt(-1.2,-1.6,-D/2+1); roomGroup.add(winLight); }
+  roomElements.windows=winGroup; roomGroup.add(winGroup);
+
+  // Second smaller window right side
+  const win2Group = new THREE.Group();
+  win2Group.position.set(W/2-0.02, 0.3, 0.5);
+  win2Group.rotation.y=Math.PI/2;
+  const wFr2 = new THREE.Mesh(new THREE.BoxGeometry(1.0,1.4,0.08), frameMat);
+  win2Group.add(wFr2);
+  const glass2 = new THREE.Mesh(new THREE.PlaneGeometry(0.75,1.1), glassMat);
+  glass2.position.z=0.05; win2Group.add(glass2);
+  roomGroup.add(win2Group);
+
+  // ── Door (left wall)
+  const doorGroup = new THREE.Group();
+  doorGroup.position.set(-W/2+0.02, -0.1, -0.5);
+  doorGroup.rotation.y=-Math.PI/2;
+  // Door frame
+  const dFr = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.2, 0.08), frameMat);
+  doorGroup.add(dFr);
+  // Door panel
+  const dPanel = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.05, 0.06), new THREE.MeshStandardMaterial({color:0xe8e0d4, roughness:0.7}));
+  dPanel.position.z=0.02; doorGroup.add(dPanel);
+  // Door knob
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04,8,8), new THREE.MeshStandardMaterial({color:0xc8a84a,roughness:0.2,metalness:0.8}));
+  knob.position.set(0.32,0,0.08); doorGroup.add(knob);
+  roomElements.doors=doorGroup; roomGroup.add(doorGroup);
+
+  scene.add(roomGroup);
+
+  // Reposition furniture inside room
+  if(currentModel) {
+    currentModel.position.set(0, 0, 0.3);
+  }
+
+  markDirty();
+}
+
+function removeRoom() {
+  if(roomGroup) { scene.remove(roomGroup); roomGroup=null; }
+  Object.keys(roomElements).forEach(k=>roomElements[k]=null);
+}
+
+function toggleRoomEl(key) {
+  const btn = document.getElementById('chip-'+key);
+  roomVisible[key] = !roomVisible[key];
+  btn.classList.toggle('on', roomVisible[key]);
+  const el = roomElements[key];
+  if(el) { el.visible = roomVisible[key]; markDirty(); }
+}
+
+// ── Explode ───────────────────────────────────────────────────────────────
+// Store original positions for each mesh entry
+let explodeOrigins = [];
+
+function captureExplodeOrigins() {
+  explodeOrigins = meshEntries.map(entry=>{
+    const wp = new THREE.Vector3();
+    entry.mesh.getWorldPosition(wp);
+    return wp.clone();
+  });
+}
+
+function updateExplode(val) {
+  explodeVal = val;
+  const el = document.getElementById('v-explode'); if(el) el.textContent=val.toFixed(1);
+  const slider = document.getElementById('s-explode'); if(slider) slider.value=val;
+  if(!currentModel || !meshEntries.length) return;
+
+  // compute model center
+  const modelBox = new THREE.Box3().setFromObject(currentModel);
+  const center = modelBox.getCenter(new THREE.Vector3());
+
+  meshEntries.forEach((entry,i)=>{
+    // Direction = mesh center relative to model center
+    const mBox = new THREE.Box3().setFromObject(entry.mesh);
+    const mc = mBox.getCenter(new THREE.Vector3());
+    const dir = mc.clone().sub(center).normalize();
+    if(dir.length()===0) dir.set(0,1,0);
+    // Apply in local space: move mesh by dir * explodeVal * scale
+    const offset = dir.multiplyScalar(val*0.8);
+    // We store original local position
+    if(!entry._origLocalPos) entry._origLocalPos = entry.mesh.position.clone();
+    entry.mesh.position.copy(entry._origLocalPos).add(offset);
+  });
+  markDirty();
+}
+
+function animateExplode() {
+  if(explodeAnim) return;
+  const start = explodeVal;
+  const target = start < 0.5 ? 1.0 : 0.0;
+  const duration = 1200;
+  const startTime = performance.now();
+  explodeAnim = requestAnimationFrame(function tick(now) {
+    const t = Math.min((now-startTime)/duration, 1);
+    const ease = t<0.5 ? 2*t*t : -1+(4-2*t)*t;
+    const val = start + (target-start)*ease;
+    updateExplode(val);
+    if(t<1) { explodeAnim=requestAnimationFrame(tick); }
+    else { explodeAnim=null; }
+  });
+}
+
+// ── AI Render ─────────────────────────────────────────────────────────────
+async function renderScene() {
+  if(!currentModel) { showToast('Load a model first!'); return; }
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('load-txt').textContent='Capturing Scene…';
+  try {
+    renderer.render(scene, camera);
+    await new Promise(r=>setTimeout(r,50));
+    const dataUrl = renderer.domElement.toDataURL('image/jpeg', 0.92);
+    let apiAvailable=false;
+    try{const probe=await fetch('/api/generate',{method:'HEAD'});apiAvailable=probe.status!==404;}catch(_){}
+    if(!apiAvailable){showToast('Deploy to Vercel to enable AI Rendering');showRenderedImage(dataUrl,true);return;}
+    document.getElementById('load-txt').textContent='Rendering in Living Room…';
+    const response=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageData:dataUrl.split(',')[1]}),signal:AbortSignal.timeout(60000)});
+    if(!response.ok){showToast('Error generating render.');return;}
+    const result=await response.json();
+    if(result.imageUrl)showRenderedImage(result.imageUrl,false);
+    else showToast('Failed to generate image.');
+  } catch(e){console.error('Render error:',e);showToast('Error generating render.');}
+  finally{document.getElementById('loading').classList.remove('on');}
+}
+function showRenderedImage(imageUrl, isLocal) {
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px)';
+  const md=document.createElement('div');
+  md.style.cssText='background:#fff;border-radius:8px;overflow:hidden;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column';
+  const hd=document.createElement('div');
+  hd.style.cssText='padding:14px 20px;border-bottom:1px solid #ebebeb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
+  const ti=document.createElement('h2');
+  ti.textContent=isLocal?'Scene Preview':'AI Render';
+  ti.style.cssText='margin:0;font-size:15px;font-weight:600;color:#111;font-family:var(--font-d)';
+  const cb=document.createElement('button');
+  cb.textContent='×';cb.style.cssText='background:none;border:none;font-size:24px;cursor:pointer;color:#888;padding:0';cb.onclick=()=>document.body.removeChild(ov);
+  const iw=document.createElement('div');
+  iw.style.cssText='padding:16px;display:flex;justify-content:center;overflow:auto;flex:1';
+  const im=document.createElement('img');
+  im.src=imageUrl;im.style.cssText='max-width:100%;max-height:70vh;object-fit:contain;border-radius:4px';
+  const ft=document.createElement('div');
+  ft.style.cssText='padding:14px 20px;border-top:1px solid #ebebeb;display:flex;justify-content:flex-end;align-items:center;flex-shrink:0';
+  const dl=document.createElement('a');
+  dl.href=imageUrl;dl.download=isLocal?'preview.png':'render.png';
+  dl.style.cssText='background:var(--accent);color:#fff;padding:9px 20px;border-radius:var(--r);text-decoration:none;font-size:12px;font-family:var(--font-b)';
+  dl.textContent=isLocal?'Download Preview':'Download Render';
+  hd.appendChild(ti);hd.appendChild(cb);iw.appendChild(im);ft.appendChild(dl);
+  md.appendChild(hd);md.appendChild(iw);md.appendChild(ft);ov.appendChild(md);
+  ov.addEventListener('click',e=>{if(e.target===ov)document.body.removeChild(ov);});
+  document.body.appendChild(ov);
+}
+
+async function exportGLB() {
+  if(!currentModel){showToast('No model loaded');return;}
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('load-txt').textContent='Exporting…';
+  try {
+    if(!THREE.GLTFExporter){
+      await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    }
+    const exporter=new THREE.GLTFExporter();
+    exporter.parse(currentModel,result=>{
+      const blob=new Blob([result],{type:'application/octet-stream'});
+      const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=currentModelKey+'_custom.glb';link.click();
+      showToast('Exported!');
+    },{binary:true});
+  } catch(e){showToast('Export failed: '+e.message);}
+  finally{document.getElementById('loading').classList.remove('on');}
+}
+
+// ── Three.js Init ─────────────────────────────────────────────────────────
 function camUpdate() {
   camera.position.set(
     tgt.x + sph.r*Math.sin(sph.phi)*Math.sin(sph.theta),
@@ -1412,39 +1563,41 @@ function camUpdate() {
 
 function initThree() {
   const canvas = document.getElementById('viewer');
-  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, preserveDrawingBuffer:true});
+  renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,preserveDrawingBuffer:true});
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.physicallyCorrectLights = true;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.physicallyCorrectLights=true;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.2;
+  renderer.shadowMap.enabled=true;
 
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(42,1,0.01,1000);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(42,1,0.01,1000);
 
-  pmremGen = new THREE.PMREMGenerator(renderer);
+  pmremGen=new THREE.PMREMGenerator(renderer);
   pmremGen.compileEquirectangularShader();
-  scene.environment = pmremGen.fromScene(new THREE.RoomEnvironment(),0.04).texture;
+  scene.environment=pmremGen.fromScene(new THREE.RoomEnvironment(),0.04).texture;
 
-  const amb = new THREE.AmbientLight(0xffffff,0.5);
-  const dir = new THREE.DirectionalLight(0xfff8f0,2.5);
+  const amb=new THREE.AmbientLight(0xffffff,0.5);
+  const dir=new THREE.DirectionalLight(0xfff8f0,2.5);
   dir.position.set(3,5,4);
   scene.add(amb,dir);
 
   camUpdate();
 
-  // Orbit controls
-  let isDrag=false, isRight=false, prev={x:0,y:0};
-  canvas.addEventListener('mousedown',e=>{ isDrag=true; isRight=e.button===2; prev={x:e.clientX,y:e.clientY}; });
+  let isDrag=false,isRight=false,prev={x:0,y:0};
+  canvas.addEventListener('mousedown',e=>{
+    if(dragActive) return; // don't orbit while dragging fabric
+    isDrag=true; isRight=e.button===2; prev={x:e.clientX,y:e.clientY};
+  });
   window.addEventListener('mousemove',e=>{
     if(!isDrag) return;
-    const dx=e.clientX-prev.x, dy=e.clientY-prev.y;
+    const dx=e.clientX-prev.x,dy=e.clientY-prev.y;
     prev={x:e.clientX,y:e.clientY};
     if(isRight){
       const spd=0.002*sph.r;
       const right=new THREE.Vector3().crossVectors(camera.getWorldDirection(new THREE.Vector3()),camera.up).normalize();
-      tgt.addScaledVector(right,-dx*spd);
-      tgt.addScaledVector(camera.up,dy*spd);
+      tgt.addScaledVector(right,-dx*spd); tgt.addScaledVector(camera.up,dy*spd);
     } else {
       sph.theta-=dx*0.007;
       sph.phi=Math.max(0.1,Math.min(Math.PI-0.1,sph.phi-dy*0.007));
@@ -1453,40 +1606,32 @@ function initThree() {
   });
   window.addEventListener('mouseup',()=>isDrag=false);
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
-  canvas.addEventListener('wheel',e=>{ sph.r=Math.max(0.3,Math.min(30,sph.r+e.deltaY*0.004)); camUpdate(); e.preventDefault(); },{passive:false});
+  canvas.addEventListener('wheel',e=>{sph.r=Math.max(0.3,Math.min(30,sph.r+e.deltaY*0.004));camUpdate();e.preventDefault();},{passive:false});
 
-  // Resize
-  const ro = new ResizeObserver(()=>{
-    const w=canvas.clientWidth, h=canvas.clientHeight;
+  const ro=new ResizeObserver(()=>{
+    const w=canvas.clientWidth,h=canvas.clientHeight;
     renderer.setSize(w,h,false);
-    camera.aspect=w/h;
-    camera.updateProjectionMatrix();
-    markDirty();
+    camera.aspect=w/h; camera.updateProjectionMatrix(); markDirty();
   });
   ro.observe(canvas);
 
-  // Render loop (dirty flag)
   (function loop(){
     requestAnimationFrame(loop);
-    if(!_dirty) return;
-    _dirty = false;
+    if(!_dirty)return;
+    _dirty=false;
     renderer.render(scene,camera);
   })();
 
-  // GLTF loader
-  const dracoLoader = new THREE.DRACOLoader();
+  const dracoLoader=new THREE.DRACOLoader();
   dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-  gltfLoader = new THREE.GLTFLoader();
+  gltfLoader=new THREE.GLTFLoader();
   gltfLoader.setDRACOLoader(dracoLoader);
 }
 
-// ── Bootstrap: wait for GLTFLoader/RoomEnvironment scripts ────────────────
-function loadScripts(urls) {
-  return urls.reduce((p, url) => p.then(() => new Promise((res,rej) => {
-    const s = document.createElement('script');
-    s.src = url; s.onload=res; s.onerror=rej;
-    document.head.appendChild(s);
-  })), Promise.resolve());
+function loadScripts(urls){
+  return urls.reduce((p,url)=>p.then(()=>new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src=url;s.onload=res;s.onerror=rej;document.head.appendChild(s);
+  })),Promise.resolve());
 }
 
 loadScripts([
@@ -1495,9 +1640,10 @@ loadScripts([
   'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js',
 ]).then(()=>{
   initThree();
+  initDragDrop();
   buildLibrary();
   loadModel(CHAIR_GLB);
-}).catch(e=>{ console.error('Script load failed',e); showToast('Failed to load Three.js loaders'); });
+}).catch(e=>{console.error('Script load failed',e);showToast('Failed to load Three.js loaders');});
 </script>
 </body>
 </html>
