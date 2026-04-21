@@ -1863,7 +1863,7 @@ function showRenderedImage(imageUrl, isLocal) {
   const hd=document.createElement('div');
   hd.style.cssText='padding:14px 20px;border-bottom:1px solid #ebebeb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
   const ti=document.createElement('h2');
-  ti.textContent=isLocal?'Scene Preview':'AI Render';
+  ti.textContent='Render';
   ti.style.cssText='margin:0;font-size:15px;font-weight:600;color:#111;font-family:var(--font-d)';
   const cb=document.createElement('button');
   cb.textContent='×';cb.style.cssText='background:none;border:none;font-size:24px;cursor:pointer;color:#888;padding:0';cb.onclick=()=>document.body.removeChild(ov);
