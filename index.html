@@ -1794,12 +1794,22 @@ async function renderScene() {
   document.getElementById('loading').classList.add('on');
   document.getElementById('load-txt').textContent = roomMode ? 'Capturing Room…' : 'Capturing Scene…';
 
-  // Temporarily zoom in for a tighter render framing (room mode only)
-  const savedSph = roomMode ? {...sph} : null;
-  const savedTgt = roomMode ? tgt.clone() : null;
+  // Save current camera state
+  const savedSph = {...sph};
+  const savedTgt = tgt.clone();
+  const savedBg = scene.background;
+  const savedClear = renderer.getClearColor(new THREE.Color()).clone();
+  const savedClearAlpha = renderer.getClearAlpha();
+
   if (roomMode) {
-    sph = { theta: sph.theta, phi: sph.phi, r: sph.r * 0.72 };
+    // Force a fixed, well-framed interior-photo camera regardless of where the user orbited.
+    // This angle looks INTO the room (not at its outside corner), from near the open side.
+    sph = { theta: 0.55, phi: 1.25, r: 5.8 };
+    tgt.set(0, roomFloorY + 0.55, 0);
     camUpdate();
+    // Give the scene a neutral off-white backdrop so the render doesn't have a black void
+    scene.background = new THREE.Color(0xf5f2ee);
+    renderer.setClearColor(0xf5f2ee, 1);
   }
 
   try {
@@ -1846,12 +1856,13 @@ async function renderScene() {
     console.error('Render error:', e);
     showToast('Error generating render.');
   } finally {
-    // Restore camera to previous view
-    if (savedSph) {
-      sph = savedSph;
-      tgt.copy(savedTgt);
-      camUpdate();
-    }
+    // Restore camera + background to where the user left off
+    sph = savedSph;
+    tgt.copy(savedTgt);
+    camUpdate();
+    scene.background = savedBg;
+    renderer.setClearColor(savedClear, savedClearAlpha);
+    markDirty();
     document.getElementById('loading').classList.remove('on');
   }
 }
