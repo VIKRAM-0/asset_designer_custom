@@ -314,6 +314,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 // ── Constants ─────────────────────────────────────────────────────────────
 const CHAIR_GLB = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/custom_assets/chair_split.glb';
 const SOFA_GLB  = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/custom_assets/sofa.glb';
+const ROOM_GLB  = 'https://nyvlydjdvhsunqbliqru.supabase.co/storage/v1/object/public/fabric_assets/glbs/room.glb';
 const MITY_IMG  = 'https://fabrics.mityinc.com/server/public/fabrics/';
 const POLY_API  = 'https://api.polyhaven.com/files/';
 
@@ -593,6 +594,11 @@ const LIBRARY = {
 let currentModelKey = 'chair';
 let meshEntries = [];
 let currentModel = null;
+// Room mode holds both chair + sofa simultaneously
+let roomFurnitureModels = { chair: null, sofa: null };
+let roomFurnitureMeshEntries = { chair: [], sofa: [] };
+// Snapshot of mesh materials per model key — survives model switching
+let modelMaterialSnapshots = { chair: null, sofa: null };
 let activeBtnEl = null;
 let lastAppliedItem = null;
 let roomMode = false;
@@ -781,6 +787,10 @@ async function applySwatchToEntries(item, targetEntries) {
         if(Array.isArray(entry.mesh.material)){const arr=[...entry.mesh.material];arr[entry.matIndex]=mat;entry.mesh.material=arr;}
       });
       markDirty(); showToast(item.name+' applied!');
+      // Auto-save material snapshot so room view retains changes
+      modelMaterialSnapshots[currentModelKey] = meshEntries.map(e => ({
+        id: e.id, name: e.name, matClone: e.greyMat.clone(),
+      }));
       return;
     }
 
@@ -810,6 +820,10 @@ async function applySwatchToEntries(item, targetEntries) {
       if(Array.isArray(entry.mesh.material)){const arr=[...entry.mesh.material];arr[entry.matIndex]=mat;entry.mesh.material=arr;}
     });
     markDirty(); showToast(item.name+' applied!');
+    // Auto-save material snapshot so room view retains changes
+    modelMaterialSnapshots[currentModelKey] = meshEntries.map(e => ({
+      id: e.id, name: e.name, matClone: e.greyMat.clone(),
+    }));
   } catch(e) {
     console.error(e); showToast('Failed to apply material');
   } finally {
@@ -1067,27 +1081,18 @@ function deselectAll() {
 // ── GLB Processing ────────────────────────────────────────────────────────
 function processGLTF(gltf) {
   try {
-    if(currentModel) scene.remove(currentModel);
+    // Guard: room mode caller manages scene membership
+    if (!roomMode && currentModel) scene.remove(currentModel);
     currentModel = gltf.scene;
     const box = new THREE.Box3().setFromObject(currentModel);
     const sz = box.getSize(new THREE.Vector3());
-    const sc = 1.6/Math.max(sz.x,sz.y,sz.z);
-    currentModel.scale.setScalar(sc);
+    currentModel.scale.setScalar(1.6 / Math.max(sz.x, sz.y, sz.z));
     const box2 = new THREE.Box3().setFromObject(currentModel);
     const ctr = box2.getCenter(new THREE.Vector3());
     currentModel.position.sub(ctr);
     currentModel.updateMatrixWorld(true);
 
-    if(roomMode && roomGroup) {
-      // Seat furniture on the floor: floor is at y = -1.6
-      // After centering, the model bottom is at y = -halfHeight
-      // We want bottom at y = -1.6, so shift down by (halfHeight - 1.6) additional
-      const finalBox = new THREE.Box3().setFromObject(currentModel);
-      const bottomY = finalBox.min.y; // current bottom in world space (approx -halfHeight)
-      const floorY = -1.6;
-      currentModel.position.y += (floorY - bottomY);
-    }
-
+    // Always add to scene (room mode will reposition via _placeFurnitureInRoom)
     scene.add(currentModel);
     const worldBox = new THREE.Box3().setFromObject(currentModel);
     const worldCenter = worldBox.getCenter(new THREE.Vector3());
@@ -1181,6 +1186,33 @@ function processGLTF(gltf) {
     if(!roomMode){
       sph={theta:0.4,phi:1.15,r:2.2}; tgt.set(0,0,0); camUpdate();
     }
+    // Room mode: camera stays, _placeFurnitureInRoom sets positions
+    // Restore previously saved material snapshot for this model key
+    const snap = modelMaterialSnapshots[currentModelKey];
+    if(snap && snap.length > 0) {
+      snap.forEach((s, si) => {
+        if(si < meshEntries.length) {
+          const entry = meshEntries[si];
+          // Copy all material properties from snapshot
+          const src = s.matClone;
+          entry.greyMat.color.copy(src.color);
+          entry.greyMat.roughness = src.roughness;
+          entry.greyMat.metalness = src.metalness;
+          if(src.sheen !== undefined) entry.greyMat.sheen = src.sheen;
+          if(src.map) { entry.greyMat.map = src.map; }
+          if(src.normalMap) { entry.greyMat.normalMap = src.normalMap; entry.greyMat.normalScale.copy(src.normalScale); }
+          if(src.roughnessMap) { entry.greyMat.roughnessMap = src.roughnessMap; }
+          entry.greyMat.needsUpdate = true;
+          // Apply to mesh
+          const matArr = Array.isArray(entry.mesh.material) ? [...entry.mesh.material] : [entry.mesh.material];
+          if(entry.matIndex >= 0 && entry.matIndex < matArr.length) {
+            matArr[entry.matIndex] = entry.greyMat;
+            entry.mesh.material = matArr;
+          }
+        }
+      });
+      markDirty();
+    }
 
     markDirty();
     document.getElementById('loading').classList.remove('on');
@@ -1204,7 +1236,11 @@ function loadModel(url) {
   document.getElementById('app-vend').textContent='';
   document.getElementById('app-sw').innerHTML='';
   document.getElementById('app-sw').style.background='var(--border)';
-  gltfLoader.load(url, gltf=>processGLTF(gltf), undefined, err=>{
+  gltfLoader.load(url, gltf => {
+    processGLTF(gltf);
+    // Keep product-mode model in sync with room cache
+    roomFurnitureModels[currentModelKey] = currentModel;
+  }, undefined, err=>{
     console.error(err);
     document.getElementById('loading').classList.remove('on');
     showToast('Failed to load model');
@@ -1212,21 +1248,152 @@ function loadModel(url) {
 }
 
 function switchModel(key) {
-  currentModelKey=key;
-  document.getElementById('tab-chair').classList.toggle('active',key==='chair');
-  document.getElementById('tab-sofa').classList.toggle('active',key==='sofa');
-  document.getElementById('lib-title').textContent=key==='chair'?'Chair Fabrics':'Sofa Fabrics';
+  // ── 1. Save snapshot of current model before switching ─────────────────
+  if (meshEntries.length > 0) {
+    modelMaterialSnapshots[currentModelKey] = meshEntries.map(e => ({
+      id: e.id, name: e.name, matClone: e.greyMat.clone(),
+    }));
+  }
+
+  const prevKey = currentModelKey;
+  currentModelKey = key;
+  document.getElementById('tab-chair').classList.toggle('active', key === 'chair');
+  document.getElementById('tab-sofa').classList.toggle('active',  key === 'sofa');
+  document.getElementById('lib-title').textContent = key === 'chair' ? 'Chair Fabrics' : 'Sofa Fabrics';
   buildLibrary();
-  loadModel(key==='chair'?CHAIR_GLB:SOFA_GLB);
+
+  if (roomMode) {
+    // ── Room mode: both models stay in scene, just swap which is "active" ──
+    // The previously-active model becomes the companion — stays in scene, stays positioned.
+    // The newly-active model: if cached, use it; if not, load it.
+    const cached = roomFurnitureModels[key];
+    if (cached) {
+      // Already in scene and positioned — just rebuild mesh list for fabric editing
+      if (currentModel) {
+        // Previous model stays in scene as companion
+        roomFurnitureModels[prevKey] = currentModel;
+      }
+      currentModel = cached;
+      // Re-run processGLTF logic without removing from scene
+      // We need meshEntries rebuilt for the new active model.
+      // Simplest: call loadModel which calls processGLTF
+      // but that removes from scene. Instead, inline the mesh rebuild:
+      meshEntries = [];
+      _rebuildMeshEntries(currentModel, key);
+      buildMeshList();
+      buildPieceList();
+      _applySnapshotToModel(currentModel, key);
+      markDirty();
+    } else {
+      // Not cached yet — load fresh
+      const url = key === 'chair' ? CHAIR_GLB : SOFA_GLB;
+      document.getElementById('loading').classList.add('on');
+      document.getElementById('load-txt').textContent = 'Loading…';
+      gltfLoader.load(url, gltf => {
+        if (currentModel) roomFurnitureModels[prevKey] = currentModel;
+        currentModel = gltf.scene;
+        const b = new THREE.Box3().setFromObject(currentModel);
+        const sz = b.getSize(new THREE.Vector3());
+        currentModel.scale.setScalar(1.6 / Math.max(sz.x, sz.y, sz.z));
+        scene.add(currentModel);
+        roomFurnitureModels[key] = currentModel;
+        processGLTF(gltf);
+        _placeFurnitureInRoom();
+        document.getElementById('loading').classList.remove('on');
+      }, undefined, () => {
+        document.getElementById('loading').classList.remove('on');
+        showToast('Failed to load model');
+      });
+    }
+  } else {
+    // ── Product mode: load fresh (applies snapshot via processGLTF) ───────
+    loadModel(key === 'chair' ? CHAIR_GLB : SOFA_GLB);
+  }
+}
+
+// Rebuild meshEntries for a model already in scene (room mode tab switch)
+function _rebuildMeshEntries(model, modelKey) {
+  const newEntries = [];
+  let meshCounter = 0;
+  const worldBox    = new THREE.Box3().setFromObject(model);
+  const worldCenter = worldBox.getCenter(new THREE.Vector3());
+  const worldSize   = worldBox.getSize(new THREE.Vector3());
+
+  model.traverse(child => {
+    if (!child.isMesh) return;
+    const mesh = child;
+    let materials = Array.isArray(mesh.material) ? mesh.material : (mesh.material ? [mesh.material] : [new THREE.MeshStandardMaterial({color:0xcccccc})]);
+    if (!Array.isArray(mesh.material)) mesh.material = materials;
+
+    materials.forEach((origMat, index) => {
+      if (!origMat) origMat = new THREE.MeshStandardMaterial({color:0xcccccc});
+      // Use existing greyMat if already processed, else clone
+      let greyMat = origMat._livinitGrey || (() => {
+        const g = origMat.clone();
+        g.color.set(0xd4d0cc); g.map=null; g.normalMap=null; g.roughnessMap=null;
+        g.roughness=0.75; g.metalness=0; g.needsUpdate=true;
+        origMat._livinitGrey = g;
+        return g;
+      })();
+
+      const meshBox = new THREE.Box3().setFromObject(mesh);
+      const ms = meshBox.getSize(new THREE.Vector3());
+      const maxDim = Math.max(ms.x, ms.y, ms.z);
+
+      // Simple name from node name
+      const KNOWN = {'wooden frame':'Wooden Frame','seat cushion':'Seat Cushion','back cushion':'Back Cushion'};
+      let cleanName = '';
+      let _n = mesh;
+      while(_n){ const k=(_n.name||'').trim().toLowerCase(); if(KNOWN[k]){cleanName=KNOWN[k];break;} _n=_n.parent; }
+      if(!cleanName) cleanName = mesh.name || `Part ${meshCounter+1}`;
+
+      newEntries.push({
+        id: `m-${meshCounter}-${index}`, name: cleanName,
+        mesh, matIndex: index, origMat, greyMat,
+        checked: false, pieceSelected: false,
+        uvScaleFactor: maxDim > 0 ? maxDim : 1,
+      });
+      meshCounter++;
+    });
+  });
+
+  // Deduplicate names
+  const rawCounts = {};
+  newEntries.forEach(e => { rawCounts[e.name] = (rawCounts[e.name]||0)+1; });
+  const rawIdx = {};
+  newEntries.forEach(e => { if(rawCounts[e.name]>1){ rawIdx[e.name]=(rawIdx[e.name]||0)+1; e.name=e.name+' '+rawIdx[e.name]; } });
+
+  meshEntries = newEntries;
 }
 
 function resetAll() {
   deselectAll();
+  // Clear ALL snapshots on reset
+  modelMaterialSnapshots = { chair: null, sofa: null };
   if(activeBtnEl){activeBtnEl.classList.remove('active');activeBtnEl=null;}
   document.getElementById('app-name').textContent='— none —';
   document.getElementById('app-vend').textContent='';
   document.getElementById('app-sw').innerHTML='';
   document.getElementById('app-sw').style.background='var(--border)';
+  // If in room mode, reload both models fresh
+  if(roomMode && roomFurnitureModels) {
+    const otherKey = currentModelKey === 'chair' ? 'sofa' : 'chair';
+    if(roomFurnitureModels[otherKey]) {
+      scene.remove(roomFurnitureModels[otherKey]);
+      roomFurnitureModels[otherKey] = null;
+    }
+    // Reload the OTHER model fresh (no snapshot to apply)
+    const otherUrl = otherKey === 'chair' ? CHAIR_GLB : SOFA_GLB;
+    gltfLoader.load(otherUrl, gltf => {
+      const m = gltf.scene;
+      const box = new THREE.Box3().setFromObject(m);
+      const sz = box.getSize(new THREE.Vector3());
+      m.scale.setScalar(1.6/Math.max(sz.x,sz.y,sz.z));
+      scene.add(m);
+      roomFurnitureModels[otherKey] = m;
+      _placeFurnitureInRoom();
+    });
+  }
   showToast('Reset');
 }
 
@@ -1298,128 +1465,266 @@ function toggleRoomView() {
   document.getElementById('panel-room').style.display    = roomMode ? 'block' : 'none';
 
   if(roomMode) {
-    buildRoom();
-    // Camera: step back to see room
-    sph={theta:0.3, phi:0.75, r:7}; tgt.set(0,0.2,0); camUpdate();
+    // Save snapshot of current model's fabric state before entering room
+    if (meshEntries.length > 0) {
+      modelMaterialSnapshots[currentModelKey] = meshEntries.map(e => ({
+        id: e.id, name: e.name, matClone: e.greyMat.clone(),
+      }));
+    }
+    // Camera will be set inside buildRoom() once room GLB loads
+    // and we know the actual floor Y. Pass a callback.
+    buildRoom(() => {
+      sph = {theta: -2.32, phi: 1.28, r: 15.7};
+      tgt.set(0, -0.72, 0);
+      camUpdate();
+    });
     buildPieceList();
   } else {
     removeRoom();
-    sph={theta:0.4,phi:1.15,r:2.2}; tgt.set(0,0,0); camUpdate();
-    // Re-center furniture (undo floor placement)
-    if(currentModel) {
-      currentModel.position.set(0,0,0);
-      // Re-center exactly as processGLTF does
+    // Restore the active model to clean centered product-view position
+    if (currentModel) {
+      currentModel.rotation.set(0, 0, 0);
+      // Reset scale to normalised base (undo room slot scale)
+      if (currentModel._baseScale) {
+        currentModel.scale.copy(currentModel._baseScale);
+        currentModel._baseScale = null;
+      }
+      currentModel.position.set(0, 0, 0);
+      currentModel.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(currentModel);
       const ctr = box.getCenter(new THREE.Vector3());
       currentModel.position.sub(ctr);
-      markDirty();
+      currentModel.updateMatrixWorld(true);
     }
+    // Restore product-view camera
+    sph = {theta: 0.4, phi: 1.15, r: 2.2};
+    tgt.set(0, 0, 0);
+    camUpdate();
+    // Re-apply environment to restore correct lighting after room session
+    if (pmremGen) {
+      scene.environment = pmremGen.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    }
+    markDirty();
   }
 }
 
 // ── Room geometry ─────────────────────────────────────────────────────────
-function buildRoom() {
+function buildRoom(onReadyCallback) {
   removeRoom();
   roomGroup = new THREE.Group();
+  scene.add(roomGroup);
 
+  // Load the room.glb as the environment
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('load-txt').textContent = 'Loading Room…';
+
+  gltfLoader.load(ROOM_GLB, gltf => {
+    const roomScene = gltf.scene;
+
+    // ── Scale room to ~6 units wide ──────────────────────────────────────
+    const rawBox  = new THREE.Box3().setFromObject(roomScene);
+    const rawSize = rawBox.getSize(new THREE.Vector3());
+    const roomScale = 6.0 / Math.max(rawSize.x, rawSize.z, 0.001);
+    roomScene.scale.setScalar(roomScale);
+    roomScene.updateMatrixWorld(true);
+
+    // ── Centre horizontally, pin bottom of room to y = -1.6 ─────────────
+    const scaledBox    = new THREE.Box3().setFromObject(roomScene);
+    const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+    roomScene.position.x = -scaledCenter.x;
+    roomScene.position.z = -scaledCenter.z;
+    roomScene.position.y = -1.6 - scaledBox.min.y;
+    roomScene.updateMatrixWorld(true);
+
+    // ── Detect actual floor surface Y in world space ─────────────────────
+    // Walk meshes, find the one with the largest XZ footprint → that's the floor
+    let bestArea = 0, detectedFloorY = -1.6;
+    roomScene.traverse(child => {
+      if (!child.isMesh) return;
+      const b = new THREE.Box3().setFromObject(child);
+      const sz = b.getSize(new THREE.Vector3());
+      // Floor candidates: very flat (height < 5% of width) and large footprint
+      if (sz.y < sz.x * 0.05 && sz.y < sz.z * 0.05) {
+        const area = sz.x * sz.z;
+        if (area > bestArea) { bestArea = area; detectedFloorY = b.max.y; }
+      }
+    });
+    // If nothing flat found, fall back to scaled box bottom + small offset
+    if (bestArea === 0) detectedFloorY = scaledBox.min.y + 0.02;
+    roomFloorY = detectedFloorY;
+    console.log('[Room] detectedFloorY =', roomFloorY, 'bestArea =', bestArea);
+
+    roomGroup.add(roomScene);
+
+    // ── Tag room sub-objects for chip toggles ────────────────────────────
+    roomScene.traverse(child => {
+      const n = (child.name || '').toLowerCase();
+      if (n.includes('wall') || n.includes('arch')) roomElements.walls = roomElements.walls || child;
+      if (n.includes('floor') || n.includes('ground')) roomElements.floor = roomElements.floor || child;
+      if (n.includes('window') || n.includes('glass')) roomElements.windows = roomElements.windows || child;
+      if (n.includes('door')) roomElements.doors = roomElements.doors || child;
+      if (n.includes('rug') || n.includes('carpet')) roomElements.rug = roomElements.rug || child;
+      if (n.includes('ceiling') || n.includes('ceil')) roomElements.ceiling = roomElements.ceiling || child;
+    });
+
+    _placeFurnitureInRoom();
+    document.getElementById('loading').classList.remove('on');
+    if (onReadyCallback) onReadyCallback();
+    markDirty();
+  }, undefined, err => {
+    console.error('Room GLB load error:', err);
+    document.getElementById('loading').classList.remove('on');
+    showToast('Room GLB failed — using fallback');
+    _buildProceduralRoom();
+    _placeFurnitureInRoom();
+    if (onReadyCallback) onReadyCallback();
+    markDirty();
+  });
+}
+
+function _buildProceduralRoom() {
   const W=6, H=3.2, D=6;
-
-  // Materials
+  roomFloorY = -1.6 + 0.01; // floor surface is the plane surface + tiny offset
   const wallMat = new THREE.MeshStandardMaterial({color:0xf5f0ea, roughness:0.9, side:THREE.BackSide});
   const floorMat= new THREE.MeshStandardMaterial({color:0xd4c4a8, roughness:0.8, metalness:0.02});
-  const trimMat = new THREE.MeshStandardMaterial({color:0xe8e4de, roughness:0.6});
-  const glassMat= new THREE.MeshStandardMaterial({color:0xb8d8e8, roughness:0.05, metalness:0.1, transparent:true, opacity:0.35});
-  const frameMat= new THREE.MeshStandardMaterial({color:0x2a2420, roughness:0.6});
-  const rugMat  = new THREE.MeshStandardMaterial({color:0x8a7060, roughness:0.95});
-
-  // ── Floor
+  const roomBox = new THREE.Mesh(new THREE.BoxGeometry(W,H,D), wallMat);
+  roomElements.walls=roomBox; roomGroup.add(roomBox);
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W,D), floorMat);
   floor.rotation.x=-Math.PI/2; floor.position.y=-1.6;
   roomElements.floor=floor; roomGroup.add(floor);
+}
 
-  // ── Ceiling
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(W,D), new THREE.MeshStandardMaterial({color:0xfaf8f5,roughness:0.95}));
-  ceiling.rotation.x=Math.PI/2; ceiling.position.y=1.6;
-  roomElements.ceiling=ceiling; roomGroup.add(ceiling);
+// ── Furniture placement ──────────────────────────────────────────────────
+//
+//  DESIGN:
+//  - roomFloorY is detected dynamically from the room.glb bounding box min.y
+//  - Both chair and sofa are loaded and kept alive for the whole room session
+//  - _seatOnFloor resets to origin, measures bbox, then positions precisely
+//  - Rotation 0 = model faces its natural forward (+Z in GLB convention)
+//    If a model loads facing wrong way, flip FURNITURE_SLOTS rotY by PI.
+//
+// Sofa faces +Z naturally (confirmed in modelviewer) = rotY: 0
+// Chair faces -Z naturally so needs Math.PI to face camera
+// Room bounds: X:[-3,3], Z:[-2.35,2.35], floorY≈-1.32
+// Sofa natural size at rot=0: 2.48 × 1.21 (long along X, faces ±Z)
+// Chair: 0.8 × 0.82 (roughly square)
+const FURNITURE_SLOTS = {
+  chair: { x:  2.2, z:  0.89, rotY:  3.93,     scale: 0.7  },
+  sofa:  { x:  0.2, z:  1.0,  rotY:  Math.PI,  scale: 1.2  },
+};
 
-  // ── Walls (box inverted normals trick — use BackSide)
-  const roomBox = new THREE.Mesh(new THREE.BoxGeometry(W,H,D), wallMat);
-  roomElements.walls=roomBox; roomGroup.add(roomBox);
+let roomFloorY = -1.6; // updated dynamically after room.glb loads
 
-  // ── Baseboard trim (front, back, left, right)
-  const bbH=0.1, bbD=0.05;
-  const bbMat = trimMat;
-  [[0,-(H/2-bbH/2),D/2,'z'],[0,-(H/2-bbH/2),-D/2,'z'],[W/2,-(H/2-bbH/2),0,'x'],[-W/2,-(H/2-bbH/2),0,'x']].forEach(([x,y,z,ax])=>{
-    const l = ax==='z'?W:D;
-    const bb = new THREE.Mesh(new THREE.BoxGeometry(l,bbH,bbD), bbMat);
-    bb.position.set(x,y,z);
-    if(ax==='x') bb.rotation.y=Math.PI/2;
-    roomGroup.add(bb);
-  });
+function _seatOnFloor(model, slotX, slotZ, rotY, slotScale) {
+  if (!model) return;
 
-  // ── Rug
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), rugMat);
-  rug.rotation.x=-Math.PI/2; rug.position.set(0,-1.595,0.4);
-  roomElements.rug=rug; roomGroup.add(rug);
+  // 1. Zero out transform
+  model.position.set(0, 0, 0);
+  model.rotation.set(0, 0, 0);
+  model.updateMatrixWorld(true);
 
-  // ── Window (back wall, slightly offset)
-  const winGroup = new THREE.Group();
-  winGroup.position.set(-1.2, 0.2, -D/2+0.02);
-  // Frame outer
-  const wFrOuter = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.8, 0.08), frameMat);
-  winGroup.add(wFrOuter);
-  // Glass (inset)
-  const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.45), glassMat);
-  glass.position.z=0.05; winGroup.add(glass);
-  // Cross bar H
-  const wBarH = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.05,0.04), frameMat);
-  wBarH.position.set(0,0,0.05); winGroup.add(wBarH);
-  // Cross bar V
-  const wBarV = new THREE.Mesh(new THREE.BoxGeometry(0.05,1.45,0.04), frameMat);
-  wBarV.position.set(0,0,0.05); winGroup.add(wBarV);
-  // Light from window
-  const winLight = new THREE.RectAreaLight ? null : new THREE.SpotLight(0xfff5e8, 1.2, 8, Math.PI/8, 0.4);
-  if(winLight){ winLight.position.set(-1.2, 0.2, -D/2+1); winLight.lookAt(-1.2,-1.6,-D/2+1); roomGroup.add(winLight); }
-  roomElements.windows=winGroup; roomGroup.add(winGroup);
+  // 2. Apply slot-specific scale on top of the normalised scale
+  // model.scale was already set to 1.6/maxDim by processGLTF
+  // We multiply by slotScale to fine-tune per-slot size
+  if (slotScale && slotScale !== 1.0) {
+    model.scale.multiplyScalar(slotScale);
+    // Prevent accumulation: store base scale and recompute
+    if (!model._baseScale) model._baseScale = model.scale.clone().divideScalar(slotScale);
+    model.scale.copy(model._baseScale).multiplyScalar(slotScale);
+  }
+  model.updateMatrixWorld(true);
 
-  // Second smaller window right side
-  const win2Group = new THREE.Group();
-  win2Group.position.set(W/2-0.02, 0.3, 0.5);
-  win2Group.rotation.y=Math.PI/2;
-  const wFr2 = new THREE.Mesh(new THREE.BoxGeometry(1.0,1.4,0.08), frameMat);
-  win2Group.add(wFr2);
-  const glass2 = new THREE.Mesh(new THREE.PlaneGeometry(0.75,1.1), glassMat);
-  glass2.position.z=0.05; win2Group.add(glass2);
-  roomGroup.add(win2Group);
+  // 3. Measure bbox after scale applied
+  const box = new THREE.Box3().setFromObject(model);
+  const ctr = box.getCenter(new THREE.Vector3());
+  const minY = box.min.y;
 
-  // ── Door (left wall)
-  const doorGroup = new THREE.Group();
-  doorGroup.position.set(-W/2+0.02, -0.1, -0.5);
-  doorGroup.rotation.y=-Math.PI/2;
-  // Door frame
-  const dFr = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.2, 0.08), frameMat);
-  doorGroup.add(dFr);
-  // Door panel
-  const dPanel = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.05, 0.06), new THREE.MeshStandardMaterial({color:0xe8e0d4, roughness:0.7}));
-  dPanel.position.z=0.02; doorGroup.add(dPanel);
-  // Door knob
-  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04,8,8), new THREE.MeshStandardMaterial({color:0xc8a84a,roughness:0.2,metalness:0.8}));
-  knob.position.set(0.32,0,0.08); doorGroup.add(knob);
-  roomElements.doors=doorGroup; roomGroup.add(doorGroup);
+  // 4. Apply rotation then translate
+  model.rotation.y = rotY;
+  model.position.set(slotX - ctr.x, roomFloorY - minY, slotZ - ctr.z);
 
-  scene.add(roomGroup);
+  model.updateMatrixWorld(true);
+  markDirty();
+}
 
-  // Reposition furniture inside room
-  if(currentModel) {
-    currentModel.position.set(0, 0, 0.3);
+// Called after room.glb loads AND after any model reload inside room mode
+function _placeFurnitureInRoom() {
+  // ── Active model ────────────────────────────────────────────────────────
+  if (currentModel) {
+    const s = FURNITURE_SLOTS[currentModelKey];
+    _seatOnFloor(currentModel, s.x, s.z, s.rotY, s.scale || 1.0);
+    roomFurnitureModels[currentModelKey] = currentModel;
+    if (!scene.getObjectById(currentModel.id)) scene.add(currentModel);
   }
 
+  // ── Companion model ─────────────────────────────────────────────────────
+  const otherKey = currentModelKey === 'chair' ? 'sofa' : 'chair';
+  const otherUrl = otherKey === 'chair' ? CHAIR_GLB : SOFA_GLB;
+  const os = FURNITURE_SLOTS[otherKey];
+
+  if (roomFurnitureModels[otherKey]) {
+    // Already loaded — just reposition
+    const other = roomFurnitureModels[otherKey];
+    if (!scene.getObjectById(other.id)) scene.add(other);
+    _seatOnFloor(other, os.x, os.z, os.rotY, os.scale || 1.0);
+  } else {
+    // Load companion fresh
+    gltfLoader.load(otherUrl, gltf => {
+      const m = gltf.scene;
+
+      // Normalise scale the same way processGLTF does
+      const b = new THREE.Box3().setFromObject(m);
+      const sz = b.getSize(new THREE.Vector3());
+      m.scale.setScalar(1.6 / Math.max(sz.x, sz.y, sz.z));
+      m.updateMatrixWorld(true);
+
+      roomFurnitureModels[otherKey] = m;
+      scene.add(m);
+      _seatOnFloor(m, os.x, os.z, os.rotY, os.scale || 1.0);
+
+      // Re-apply any saved fabric snapshot for the companion
+      _applySnapshotToModel(m, otherKey);
+    }, undefined, err => {
+      console.warn('Companion furniture load failed:', err);
+    });
+  }
+}
+
+// Apply a saved material snapshot to a raw gltf scene (companion model)
+function _applySnapshotToModel(model, key) {
+  const snap = modelMaterialSnapshots[key];
+  if (!snap || !snap.length) return;
+  let si = 0;
+  model.traverse(child => {
+    if (!child.isMesh) return;
+    const mats = Array.isArray(child.material) ? child.material : [child.material];
+    mats.forEach((_, idx) => {
+      if (si < snap.length) {
+        const arr = Array.isArray(child.material) ? [...child.material] : [child.material];
+        arr[idx] = snap[si].matClone.clone();
+        arr[idx].needsUpdate = true;
+        child.material = arr;
+        si++;
+      }
+    });
+  });
   markDirty();
 }
 
 function removeRoom() {
-  if(roomGroup) { scene.remove(roomGroup); roomGroup=null; }
-  Object.keys(roomElements).forEach(k=>roomElements[k]=null);
+  if (roomGroup) { scene.remove(roomGroup); roomGroup = null; }
+  Object.keys(roomElements).forEach(k => roomElements[k] = null);
+
+  // Remove companion from scene but KEEP in roomFurnitureModels cache
+  // so next room entry repositions it instantly (no async reload)
+  const otherKey = currentModelKey === 'chair' ? 'sofa' : 'chair';
+  if (roomFurnitureModels[otherKey]) {
+    scene.remove(roomFurnitureModels[otherKey]);
+    // Do NOT null it — keep cached for fast re-entry
+  }
+
+  // Reset roomFloorY back to default
+  roomFloorY = -1.6;
 }
 
 function toggleRoomEl(key) {
@@ -1487,22 +1792,68 @@ function animateExplode() {
 async function renderScene() {
   if(!currentModel) { showToast('Load a model first!'); return; }
   document.getElementById('loading').classList.add('on');
-  document.getElementById('load-txt').textContent='Capturing Scene…';
+  document.getElementById('load-txt').textContent = roomMode ? 'Capturing Room…' : 'Capturing Scene…';
+
+  // Temporarily zoom in for a tighter render framing (room mode only)
+  const savedSph = roomMode ? {...sph} : null;
+  const savedTgt = roomMode ? tgt.clone() : null;
+  if (roomMode) {
+    sph = { theta: sph.theta, phi: sph.phi, r: sph.r * 0.72 };
+    camUpdate();
+  }
+
   try {
+    // Force 2 fresh frames so dirty-flag loop has flushed
     renderer.render(scene, camera);
-    await new Promise(r=>setTimeout(r,50));
-    const dataUrl = renderer.domElement.toDataURL('image/jpeg', 0.92);
-    let apiAvailable=false;
-    try{const probe=await fetch('/api/generate',{method:'HEAD'});apiAvailable=probe.status!==404;}catch(_){}
-    if(!apiAvailable){showToast('Deploy to Vercel to enable AI Rendering');showRenderedImage(dataUrl,true);return;}
-    document.getElementById('load-txt').textContent='Rendering in Living Room…';
-    const response=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageData:dataUrl.split(',')[1]}),signal:AbortSignal.timeout(60000)});
-    if(!response.ok){showToast('Error generating render.');return;}
-    const result=await response.json();
-    if(result.imageUrl)showRenderedImage(result.imageUrl,false);
+    await new Promise(r => setTimeout(r, 80));
+    renderer.render(scene, camera);
+    await new Promise(r => setTimeout(r, 40));
+
+    const dataUrl = renderer.domElement.toDataURL('image/jpeg', 0.95);
+
+    let apiAvailable = false;
+    try {
+      const probe = await fetch('/api/generate', {method:'HEAD'});
+      apiAvailable = probe.status !== 404;
+    } catch(_) {}
+
+    if (!apiAvailable) {
+      // No API — just show the captured screenshot as a high-quality preview
+      showToast(roomMode ? 'Room scene captured!' : 'Deploy to Vercel for AI Rendering');
+      showRenderedImage(dataUrl, true);
+      return;
+    }
+
+    document.getElementById('load-txt').textContent = roomMode
+      ? 'Rendering Room Scene…'
+      : 'Rendering in Living Room…';
+
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        imageData: dataUrl.split(',')[1],
+        mode: roomMode ? 'room' : 'product',
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (!response.ok) { showToast('Error generating render.'); return; }
+    const result = await response.json();
+    if (result.imageUrl) showRenderedImage(result.imageUrl, false);
     else showToast('Failed to generate image.');
-  } catch(e){console.error('Render error:',e);showToast('Error generating render.');}
-  finally{document.getElementById('loading').classList.remove('on');}
+  } catch(e) {
+    console.error('Render error:', e);
+    showToast('Error generating render.');
+  } finally {
+    // Restore camera to previous view
+    if (savedSph) {
+      sph = savedSph;
+      tgt.copy(savedTgt);
+      camUpdate();
+    }
+    document.getElementById('loading').classList.remove('on');
+  }
 }
 function showRenderedImage(imageUrl, isLocal) {
   const ov=document.createElement('div');
@@ -1643,6 +1994,18 @@ loadScripts([
   initDragDrop();
   buildLibrary();
   loadModel(CHAIR_GLB);
+
+  // Pre-load companion models so room view is instant (no async lag)
+  // Load sofa silently into cache — don't add to scene yet
+  gltfLoader.load(SOFA_GLB, gltf => {
+    const m = gltf.scene;
+    const b = new THREE.Box3().setFromObject(m);
+    const sz = b.getSize(new THREE.Vector3());
+    m.scale.setScalar(1.6 / Math.max(sz.x, sz.y, sz.z));
+    m.updateMatrixWorld(true);
+    roomFurnitureModels.sofa = m;
+    console.log('[Preload] sofa ready');
+  }, undefined, () => { /* silent fail */ });
 }).catch(e=>{console.error('Script load failed',e);showToast('Failed to load Three.js loaders');});
 </script>
 </body>
