@@ -11,16 +11,30 @@ Rules you must follow:
 - Preserve the furniture's exact fabric texture, colour, pattern, and material from the input image — do not change or improve it
 - Photorealistic, 8K quality, soft natural lighting`;
 
-const ROOM_PROMPT = `You are a professional architectural interior renderer. The input image is a 3D scene of a living room. Convert it into a photorealistic editorial photograph of the same room.
+const ROOM_PROMPT = `You are a professional interior photography renderer. The input image is a 3D scene of a living room. Convert it into a photorealistic, bright, magazine-quality interior photograph.
 
-Rules you must follow:
-- Preserve the EXACT layout, camera angle, and composition of the input — do not move, rotate, add, or remove any furniture, walls, windows, rugs, plants, or decor
-- Preserve the EXACT fabric textures, colours, patterns, and materials on every piece of furniture — especially the sofa and accent chair upholstery
-- Preserve the wall colours, floor material, curtains, shelving, and all existing decor exactly as shown
-- Upgrade only the realism: add true-to-life lighting (soft daylight from the windows, subtle warm ambient fill), accurate material response (fabric weave, wood grain, ceramic sheen), realistic shadows and contact shadows under furniture, subtle global illumination bounce
-- NO television, screens, or media units
-- Photorealistic, 8K quality, magazine editorial style, shallow depth of field acceptable but the focal furniture must stay sharp
-- Do NOT stylise, cartoonify, or change the colour palette`;
+STRICT PRESERVATION (do not change):
+- The exact camera angle, framing, and composition
+- The exact placement, size, and rotation of the sofa, accent chair, ottoman, coffee table, side table, shelves, plants, rug, and curtains
+- The exact fabric colour, pattern, and texture of the sofa and accent chair upholstery
+- The wall colour and shelving layout
+- The rug shape, colour, and position under the furniture
+
+REALISM UPGRADES (apply these):
+- Bright, even, natural daylight flooding in from the left windows with soft warm ambient fill across the room
+- Photorealistic fabric weave on upholstery, realistic wood grain on legs and shelving, ceramic and pottery with accurate sheen
+- Soft contact shadows directly under every piece of furniture
+- Subtle global illumination and bounce light
+- Clean, white-balanced exposure — never dim, never moody, never dark
+- Sharp focus across the whole scene, no heavy depth-of-field blur
+- Editorial magazine styling — think West Elm or Crate & Barrel catalogue photography
+
+FORBIDDEN:
+- Do NOT add, remove, or rearrange furniture
+- Do NOT change fabric colours, patterns, or materials
+- Do NOT add a TV, screen, media unit, or ceiling pendant that isn't already in the scene
+- Do NOT crop in or out — keep the exact same framing
+- Do NOT stylise, cartoonify, or apply vintage/dark filters`;
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
