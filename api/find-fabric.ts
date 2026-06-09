@@ -1,13 +1,14 @@
 import { GoogleGenAI } from '@google/genai';
 
 export default async function handler(req: any, res: any) {
+  if (req.method === 'HEAD') return res.status(200).end();
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { imageData, description } = req.body || {};
-  if (!description && !imageData) {
-    return res.status(400).json({ error: 'Missing description or imageData' });
+  const { imageData } = req.body || {};
+  if (!imageData) {
+    return res.status(400).json({ error: 'Missing imageData' });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
@@ -15,33 +16,37 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: 'Missing GEMINI_API_KEY' });
   }
 
-  const prompt = `You are a 3D texture expert helping find PBR fabric textures.
+  const prompt = `You are a 3D materials expert. Analyze this fabric/material image and return PBR rendering properties.
 
-${description ? `User description: "${description}"` : ''}
-${imageData ? 'An image of the fabric/material is also provided above.' : ''}
-
-Return ONLY valid JSON — no markdown, no explanation, no code fences:
+Return ONLY valid JSON with no markdown fences, no explanation:
 {
-  "keywords": ["word1", "word2", "word3"],
+  "name": "Short fabric name (2-4 words, e.g. Woven Linen Beige)",
   "type": "fabric",
-  "polyhavenIds": ["id1", "id2"],
-  "summary": "one sentence"
+  "roughness": 0.72,
+  "sheen": 0.10,
+  "metalness": 0.0,
+  "scale": 10.0,
+  "norm": 1.0,
+  "hex": "#c4b090",
+  "description": "Brief 1-sentence description"
 }
 
 Rules:
-- "keywords": 3–6 specific searchable terms to find matching PBR textures on PolyHaven (focus on weave/pattern, texture, surface, color family, material class)
-- "type": one of: fabric, leather, vinyl, linen, velvet, suede, cotton, wool, canvas, denim, wood, carpet
-- "polyhavenIds": up to 3 snake_case PolyHaven texture IDs you are highly confident match. Known fabric IDs include: fabric_pattern_05, rough_linen, scuba_suede, brown_leather, hessian_230, caban, cotton_fabric, leather_white, jute, corduroy. Only include IDs you are certain about.
-- "summary": one sentence describing the material`;
+- "type": one of fabric | linen | leather | vinyl | pu | suede | velvet | cotton | canvas | denim | wood | carpet
+- "roughness": 0.0 (glossy) to 1.0 (matte). Most fabrics 0.65–0.90, leather 0.45–0.70, vinyl 0.30–0.55
+- "sheen": 0.0 to 1.0. Use 0.15–0.35 for velvet/suede, 0.05–0.15 for most fabrics, 0.0 for leather/vinyl
+- "metalness": always 0.0 for fabric/textile; 0.0–0.05 for coated materials
+- "scale": UV tile scale 6.0–18.0. Fine weaves ~8–12, large patterns ~4–7, coarse textures ~12–16
+- "norm": normal map intensity 0.5–2.0. Smooth fabrics ~0.8, heavily textured ~1.5–2.0
+- "hex": dominant average color of the fabric as a 6-digit hex code`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
 
-    const parts: any[] = [];
-    if (imageData) {
-      parts.push({ inlineData: { data: imageData, mimeType: 'image/jpeg' } });
-    }
-    parts.push({ text: prompt });
+    const parts: any[] = [
+      { inlineData: { data: imageData, mimeType: 'image/jpeg' } },
+      { text: prompt },
+    ];
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -51,19 +56,26 @@ Rules:
     const raw = response.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return res.status(200).json({ keywords: [], polyhavenIds: [] });
+      return res.status(200).json({ name: '', type: 'fabric', roughness: 0.72, sheen: 0.1, metalness: 0, scale: 10, norm: 1, hex: '#c8c0b8' });
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const d = JSON.parse(jsonMatch[0]);
     return res.status(200).json({
-      keywords:     Array.isArray(parsed.keywords)     ? parsed.keywords     : [],
-      type:         typeof parsed.type === 'string'    ? parsed.type         : 'fabric',
-      polyhavenIds: Array.isArray(parsed.polyhavenIds) ? parsed.polyhavenIds : [],
-      summary:      typeof parsed.summary === 'string' ? parsed.summary      : '',
+      name:      typeof d.name       === 'string' ? d.name       : '',
+      type:      typeof d.type       === 'string' ? d.type       : 'fabric',
+      roughness: typeof d.roughness  === 'number' ? d.roughness  : 0.72,
+      sheen:     typeof d.sheen      === 'number' ? d.sheen      : 0.10,
+      metalness: typeof d.metalness  === 'number' ? d.metalness  : 0.0,
+      scale:     typeof d.scale      === 'number' ? d.scale      : 10.0,
+      norm:      typeof d.norm       === 'number' ? d.norm       : 1.0,
+      hex:       typeof d.hex        === 'string' ? d.hex        : '#c8c0b8',
+      description: typeof d.description === 'string' ? d.description : '',
     });
   } catch (error: any) {
     console.error('find-fabric error:', error);
-    // Return empty so client gracefully falls back to keyword search
-    return res.status(200).json({ keywords: [], polyhavenIds: [], error: error.message });
+    return res.status(200).json({
+      name: '', type: 'fabric', roughness: 0.72, sheen: 0.1,
+      metalness: 0, scale: 10, norm: 1, hex: '#c8c0b8',
+    });
   }
 }

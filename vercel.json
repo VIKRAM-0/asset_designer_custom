@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/acg-map.ts": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
