@@ -22,7 +22,8 @@ export default async function handler(req: any, res: any) {
 
   const assetId = (id as string).trim();
   const mapKey  = (map as string) as keyof typeof MAP_PATTERNS;
-  const zipUrl  = `https://ambientcg.com/get?q=${encodeURIComponent(assetId)}&d=${resolution}-JPG`;
+  // New URL format: get?file={id}_{res}-JPG.zip  (old get?q=...&d=... redirects to wrong asset)
+  const zipUrl  = `https://ambientcg.com/get?file=${encodeURIComponent(assetId)}_${resolution}-JPG.zip`;
 
   console.log(`[acg-map] fetching ${assetId} / ${mapKey} @ ${resolution} — ${zipUrl}`);
 

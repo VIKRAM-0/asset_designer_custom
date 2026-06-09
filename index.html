@@ -2698,29 +2698,29 @@ async function _searchAmbientCG(query) {
   });
   if (!r.ok) throw new Error('AmbientCG proxy unreachable');
   const data = await r.json();
-  if (data.error && !data.foundAssets?.length) {
+  if (data.error && !(data.assets || []).length) {
     console.warn('[acg-search] error from proxy:', data.error);
     return [];
   }
-  return (data.foundAssets || [])
+  // v3: response key is "assets", download field is "attributes" (plural)
+  return (data.assets || [])
     .filter(a => {
-      // v3 API: downloads is an array of {attribute, downloadLink, ...}
       const dl = a.downloads || [];
-      return dl.some(d => d.attribute === '1K-JPG' || d.attribute === '2K-JPG' || d.attribute === '1K-PNG');
+      return dl.some(d => d.attributes === '1K-JPG' || d.attributes === '2K-JPG' || d.attributes === '1K-PNG');
     })
     .map(a => {
-      // v3 previews: object with keys like "sphere", "flat", etc. containing {url}
-      const previews = a.previews || {};
-      const thumb = previews.sphere?.url
-        || previews.flat?.url
-        || Object.values(previews)[0]?.url
-        // Predictable fallback URL pattern AmbientCG uses
-        || `https://ambientcg.com/img/100/${a.assetId}_sphere.jpg`;
-      const name = (a.displayName || a.assetId)
-        .replace(/([a-z])([A-Z])/g, '$1 $2')  // camelCase → words
-        .replace(/(\D)(\d)/g, '$1 $2')          // letters before digits
+      // Extract real color thumbnail from the pbr-one preview URL's color_url param
+      let thumb = null;
+      const previewUrl = (a.previews || [])[0]?.url || '';
+      const m = previewUrl.match(/color_url=([^&]+)/);
+      if (m) thumb = decodeURIComponent(m[1]).split('?')[0];
+      // Clean up name: "Fabric081C" → "Fabric 081 C"
+      const name = (a.id || '')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/([A-Za-z])(\d)/g, '$1 $2')
+        .replace(/(\d)([A-Za-z])/g, '$1 $2')
         .replace(/\s+/g, ' ').trim();
-      return { id: a.assetId, source:'ambientcg', name, thumb };
+      return { id: a.id, source:'ambientcg', name, thumb };
     });
 }
 
