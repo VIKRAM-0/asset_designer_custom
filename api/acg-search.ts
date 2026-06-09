@@ -8,8 +8,9 @@ export default async function handler(req: any, res: any) {
   const q     = (req.query.q as string) || 'fabric';
   const limit = Math.min(Number(req.query.limit) || 20, 100);
 
-  // v3 API — type=material covers fabric/leather/surface PBR assets
-  const url = `https://ambientcg.com/api/v3/assets?type=material&sort=popular&limit=${limit}&include=downloads,previews&q=${encodeURIComponent(q)}`;
+  // Restrict to upholstery-relevant categories — avoids stones, bricks, etc.
+  const FABRIC_CATS = 'Fabric,Leather,Carpet,Foam,AcousticFoam';
+  const url = `https://ambientcg.com/api/v3/assets?type=material&category=${FABRIC_CATS}&sort=popular&limit=${limit}&include=downloads,previews&q=${encodeURIComponent(q)}`;
 
   try {
     const upstream = await fetch(url, {

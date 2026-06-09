@@ -150,6 +150,8 @@ header{height:56px;padding:0 24px;display:flex;align-items:center;justify-conten
 .app-sw img{width:100%;height:100%;object-fit:cover}
 .app-name{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app-vend{font-size:10px;color:var(--text-muted);margin-top:1px}
+.app-replace-btn{flex-shrink:0;width:26px;height:26px;border-radius:var(--r);border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all .15s;padding:0}
+.app-replace-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-pale)}
 /* Sliders */
 .sl-row{margin-bottom:12px}
 .sl-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--text-mid);margin-bottom:5px}
@@ -488,11 +490,15 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
         <div class="r-sec-t">Applied Material</div>
         <div class="app-prev">
           <div class="app-sw" id="app-sw"></div>
-          <div>
+          <div style="flex:1;min-width:0">
             <div class="app-name" id="app-name">— none —</div>
             <div class="app-vend" id="app-vend"></div>
           </div>
+          <button class="app-replace-btn" id="app-replace-btn" title="Replace with your own image" onclick="openDiffuseUpload()" style="display:none">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          </button>
         </div>
+        <input type="file" id="diffuse-upload-input" accept="image/*" style="display:none">
       </div>
       <div class="r-sec">
         <div class="r-sec-t">Material Adjustments</div>
@@ -555,10 +561,13 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
         <div class="r-sec-t">Applied Material</div>
         <div class="app-prev">
           <div class="app-sw" id="app-sw-room"></div>
-          <div>
+          <div style="flex:1;min-width:0">
             <div class="app-name" id="app-name-room">— none —</div>
             <div class="app-vend" id="app-vend-room"></div>
           </div>
+          <button class="app-replace-btn" id="app-replace-btn-room" title="Replace with your own image" onclick="openDiffuseUpload()" style="display:none">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          </button>
         </div>
       </div>
       <div class="r-sec">
@@ -674,12 +683,12 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
         <div class="finder-filter-section" id="finder-filter-section">
           <div class="finder-filter-label">Quick Filters</div>
           <div class="finder-quick-filters">
-            <button class="finder-chip" onclick="quickSearch('upholstery fabric')">Upholstery</button>
-            <button class="finder-chip" onclick="quickSearch('linen cotton')">Linen</button>
+            <button class="finder-chip" onclick="quickSearch('fabric')">Fabric</button>
             <button class="finder-chip" onclick="quickSearch('leather')">Leather</button>
-            <button class="finder-chip" onclick="quickSearch('velvet suede')">Velvet</button>
-            <button class="finder-chip" onclick="quickSearch('canvas')">Canvas</button>
-            <button class="finder-chip" onclick="quickSearch('outdoor vinyl')">Outdoor</button>
+            <button class="finder-chip" onclick="quickSearch('carpet')">Carpet</button>
+            <button class="finder-chip" onclick="quickSearch('woven')">Woven</button>
+            <button class="finder-chip" onclick="quickSearch('knit')">Knit</button>
+            <button class="finder-chip" onclick="quickSearch('dark')">Dark</button>
           </div>
         </div>
 
@@ -1169,6 +1178,8 @@ async function applySwatchToEntries(item, targetEntries) {
       sw.innerHTML=''; sw.style.background=item.hex||'#ccc';
       if(item.img){const ig=document.createElement('img');ig.src=item.img;ig.alt=item.name;ig.onerror=()=>{ig.remove();sw.style.background=item.hex||'#ccc'};sw.appendChild(ig);}
     }
+    const rb=document.getElementById('app-replace-btn'+(sfx?'-'+sfx:''));
+    if(rb) rb.style.display='flex';
   });
 
   try {
@@ -1254,6 +1265,79 @@ async function applySwatch(gi, ii, btnEl) {
   activeBtnEl = btnEl; btnEl.classList.add('active');
   lastAppliedItem = item;
   await applySwatchToEntries(item, checked);
+}
+
+// ── Custom diffuse image upload ─────────────────────────────────────────────
+function openDiffuseUpload() {
+  document.getElementById('diffuse-upload-input').click();
+}
+
+(function() {
+  // Deferred so the DOM element is guaranteed to exist
+  document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('diffuse-upload-input');
+    if (!inp) return;
+    inp.addEventListener('change', async function() {
+      const file = this.files?.[0];
+      this.value = '';
+      if (!file) return;
+      await handleDiffuseUpload(file);
+    });
+  });
+})();
+
+async function handleDiffuseUpload(file) {
+  const entries = roomMode
+    ? (roomFurnitureMeshEntries[currentModelKey] || []).filter(e => e.checked)
+    : meshEntries.filter(e => e.checked);
+  if (!entries.length) { showToast('Select parts to apply texture to →'); return; }
+
+  // Read image as data URL
+  const dataUrl = await new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ev => resolve(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  const tex = await tryLoadTex(dataUrl, true).catch(() => null);
+  if (!tex) { showToast('Could not load image'); return; }
+
+  // Replace diffuse only — keep existing normal/roughness maps intact
+  entries.forEach(entry => {
+    const mat = entry.greyMat;
+    const physRepeat = sScale * (entry.uvScaleFactor / BASE_TILE);
+    const dt = tex.clone();
+    dt.wrapS = dt.wrapT = THREE.RepeatWrapping;
+    dt.repeat.set(physRepeat, physRepeat);
+    dt.needsUpdate = true;
+    mat.map = dt;
+    mat.color.setRGB(Math.max(0.01, sBrightness), Math.max(0.01, sBrightness), Math.max(0.01, sBrightness));
+    mat.needsUpdate = true;
+    if (Array.isArray(entry.mesh.material)) {
+      const arr = [...entry.mesh.material];
+      arr[entry.matIndex] = mat;
+      entry.mesh.material = arr;
+    }
+  });
+
+  // Update app-sw preview in both panels
+  ['', 'room'].forEach(sfx => {
+    const sw = document.getElementById('app-sw' + (sfx ? '-' + sfx : ''));
+    if (!sw) return;
+    sw.innerHTML = '';
+    sw.style.background = 'transparent';
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    img.alt = 'Custom';
+    sw.appendChild(img);
+  });
+
+  markDirty();
+  showToast('Custom image applied!');
+
+  modelMaterialSnapshots[currentModelKey] = meshEntries.map(e => ({
+    id: e.id, name: e.name, matClone: e.greyMat.clone(),
+  }));
 }
 
 // ── Drag & Drop ────────────────────────────────────────────────────────────
@@ -1650,6 +1734,7 @@ function loadModel(url) {
   document.getElementById('app-vend').textContent='';
   document.getElementById('app-sw').innerHTML='';
   document.getElementById('app-sw').style.background='var(--border)';
+  const _rba=document.getElementById('app-replace-btn');if(_rba)_rba.style.display='none';
   gltfLoader.load(url, gltf => {
     processGLTF(gltf);
     // Keep product-mode model in sync with room cache
@@ -1789,6 +1874,7 @@ function resetAll() {
   document.getElementById('app-vend').textContent='';
   document.getElementById('app-sw').innerHTML='';
   document.getElementById('app-sw').style.background='var(--border)';
+  const _rbr=document.getElementById('app-replace-btn');if(_rbr)_rbr.style.display='none';
   // If in room mode, reload both models fresh
   if(roomMode && roomFurnitureModels) {
     const otherKey = currentModelKey === 'chair' ? 'sofa' : 'chair';
@@ -2616,6 +2702,14 @@ async function _analyzeImageAndAdd() {
 
 // ── Text path: search PolyHaven + AmbientCG ───────────────────────────────
 async function _searchAndShow(query, matType, activeChip) {
+  const trimmed = (query || '').trim();
+
+  // Require at least a meaningful term — chips always have a query, typing requires 2+ chars
+  if (!trimmed && !matType) {
+    showToast('Type a keyword to search — e.g. "dark linen"');
+    return;
+  }
+
   const btn = document.getElementById('finder-btn');
   btn.disabled = true;
   document.getElementById('finder-btn-txt').textContent = 'Searching…';
@@ -2628,17 +2722,17 @@ async function _searchAndShow(query, matType, activeChip) {
   document.getElementById('finder-results-title').textContent = 'Searching…';
   document.getElementById('finder-right-title').textContent = 'Search Results';
 
-  // Update chip active state
   document.querySelectorAll('.finder-chip').forEach(c => c.classList.remove('active'));
   if (activeChip) activeChip.classList.add('active');
 
   try {
-    const keywords = [...(query ? query.toLowerCase().split(/\s+/).filter(w=>w.length>2) : [])];
-    if (matType) keywords.push(matType);
+    const keywords = trimmed.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+    if (matType) keywords.push(matType.toLowerCase());
 
     const [ph, acg] = await Promise.allSettled([
       _searchPolyHaven(keywords, matType),
-      _searchAmbientCG([...keywords].slice(0,4).join(' ') || matType || 'fabric'),
+      // Only pass a real query to AmbientCG — empty string returns all 159 assets
+      trimmed || matType ? _searchAmbientCG(trimmed || matType) : Promise.resolve([]),
     ]);
 
     const seen = new Set();
@@ -2648,12 +2742,15 @@ async function _searchAndShow(query, matType, activeChip) {
     ].filter(r => { if(seen.has(r.id)) return false; seen.add(r.id); return true; });
 
     _renderFinderResults(all.slice(0, 30));
+    const label = trimmed ? `"${trimmed}"` : matType;
     document.getElementById('finder-results-title').textContent =
-      all.length ? `${all.length} result${all.length!==1?'s':''}` : 'No results';
+      all.length
+        ? `${all.length} result${all.length !== 1 ? 's' : ''} for ${label}`
+        : `No assets found for ${label}`;
   } catch(e) {
     console.error('_searchAndShow:', e);
     document.getElementById('finder-results-grid').innerHTML =
-      '<div class="finder-state">Search failed — try different terms.</div>';
+      '<div class="finder-state">Search failed — check your connection and try again.</div>';
   } finally {
     btn.disabled = false;
     updateFinderMode();
@@ -2662,38 +2759,40 @@ async function _searchAndShow(query, matType, activeChip) {
 
 function quickSearch(query) {
   const chip = event.currentTarget;
-  document.getElementById('finder-name').value = query;
+  // Don't overwrite the name field for "All Fabrics" (empty query)
+  if (query) document.getElementById('finder-name').value = query;
   document.getElementById('finder-material-type').value = '';
   _searchAndShow(query, '', chip);
 }
 
 async function _searchPolyHaven(keywords, matType) {
+  if (!keywords.length) return [];
   if (!_phCache) {
     const r = await fetch('https://api.polyhaven.com/assets?type=textures', { signal: AbortSignal.timeout(9000) });
     if (!r.ok) throw new Error('PolyHaven unreachable');
     _phCache = await r.json();
   }
-  const fabricHints = ['fabric','cloth','textile','wool','linen','cotton','leather','velvet','silk','weave','knit','tweed','burlap','suede','denim','canvas','jute','upholstery'];
-  const kws = keywords.map(k=>k.toLowerCase());
-  const scored = Object.entries(_phCache).map(([id,data]) => {
-    const blob = [id,data.name||'',...(data.categories||[]),...(data.tags||[])].join(' ').toLowerCase();
+  const kws = keywords.map(k => k.toLowerCase());
+  const scored = Object.entries(_phCache).map(([id, data]) => {
+    const blob = [id, data.name||'', ...(data.categories||[]), ...(data.tags||[])].join(' ').toLowerCase();
     let score = 0;
-    for(const k of kws) { if(blob.includes(k)) score+=3; }
-    for(const f of fabricHints) { if(blob.includes(f)) score+=1; }
-    return { id, score, name:(data.name||id).replace(/_/g,' ') };
+    // Require at least one keyword to directly match — no filler hint points alone
+    for (const k of kws) { if (blob.includes(k)) score += 4; }
+    return { id, score, name: (data.name || id).replace(/_/g, ' ') };
   });
   return scored
-    .filter(s=>s.score>0)
-    .sort((a,b)=>b.score-a.score)
-    .slice(0,18)
-    .map(s=>({
-      id:s.id, source:'polyhaven', name:s.name,
-      thumb:`https://cdn.polyhaven.com/asset_img/thumbs/${s.id}.png?width=200`,
+    .filter(s => s.score >= 4)   // must match at least one user keyword directly
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 15)
+    .map(s => ({
+      id: s.id, source: 'polyhaven', name: s.name,
+      thumb: `https://cdn.polyhaven.com/asset_img/thumbs/${s.id}.png?width=200`,
     }));
 }
 
 async function _searchAmbientCG(query) {
-  const r = await fetch(`/api/acg-search?q=${encodeURIComponent(query)}&limit=20`, {
+  if (!query || !query.trim()) return [];   // never send empty q — returns all 159 assets
+  const r = await fetch(`/api/acg-search?q=${encodeURIComponent(query.trim())}&limit=20`, {
     signal: AbortSignal.timeout(12000),
   });
   if (!r.ok) throw new Error('AmbientCG proxy unreachable');
