@@ -2693,21 +2693,35 @@ async function _searchPolyHaven(keywords, matType) {
 }
 
 async function _searchAmbientCG(query) {
-  const r = await fetch(`/api/acg-search?q=${encodeURIComponent(query)}&limit=14`, {
-    signal: AbortSignal.timeout(10000),
+  const r = await fetch(`/api/acg-search?q=${encodeURIComponent(query)}&limit=20`, {
+    signal: AbortSignal.timeout(12000),
   });
   if (!r.ok) throw new Error('AmbientCG proxy unreachable');
   const data = await r.json();
+  if (data.error && !data.foundAssets?.length) {
+    console.warn('[acg-search] error from proxy:', data.error);
+    return [];
+  }
   return (data.foundAssets || [])
     .filter(a => {
-      const dl = Object.values(a.downloadData || {});
-      return dl.some(d => d.attribute === '1K-JPG' || d.attribute === '2K-JPG');
+      // v3 API: downloads is an array of {attribute, downloadLink, ...}
+      const dl = a.downloads || [];
+      return dl.some(d => d.attribute === '1K-JPG' || d.attribute === '2K-JPG' || d.attribute === '1K-PNG');
     })
-    .map(a => ({
-      id: a.assetId, source:'ambientcg',
-      name: (a.displayName||a.assetId).replace(/([A-Z][a-z])/g,' $1').replace(/(\d+)/g,' $1').replace(/\s+/g,' ').trim(),
-      thumb: a.previewImage || null,
-    }));
+    .map(a => {
+      // v3 previews: object with keys like "sphere", "flat", etc. containing {url}
+      const previews = a.previews || {};
+      const thumb = previews.sphere?.url
+        || previews.flat?.url
+        || Object.values(previews)[0]?.url
+        // Predictable fallback URL pattern AmbientCG uses
+        || `https://ambientcg.com/img/100/${a.assetId}_sphere.jpg`;
+      const name = (a.displayName || a.assetId)
+        .replace(/([a-z])([A-Z])/g, '$1 $2')  // camelCase → words
+        .replace(/(\D)(\d)/g, '$1 $2')          // letters before digits
+        .replace(/\s+/g, ' ').trim();
+      return { id: a.assetId, source:'ambientcg', name, thumb };
+    });
 }
 
 function _renderFinderResults(results) {
