@@ -56,10 +56,10 @@ header{height:56px;padding:0 24px;display:flex;align-items:center;justify-conten
 .p-group-hdr:hover .p-name{color:var(--text)}
 .p-name{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-mid);transition:color .15s}
 .p-vendor{font-size:10px;color:var(--text-muted);font-style:italic;margin-top:1px}
-.p-arrow{font-size:10px;color:var(--text-muted);transition:transform .2s}
+.p-arrow{font-size:10px;color:var(--text-muted);transition:transform .28s cubic-bezier(.4,0,.2,1)}
 .p-group.collapsed .p-arrow{transform:rotate(-90deg)}
-.p-swatches{padding:4px 14px 8px;display:grid;grid-template-columns:repeat(6,1fr);gap:5px;overflow:hidden}
-.p-group.collapsed .p-swatches{display:none}
+.p-swatches{padding:4px 14px 8px;display:grid;grid-template-columns:repeat(6,1fr);gap:5px;overflow:hidden;max-height:900px;transition:max-height .35s cubic-bezier(.4,0,.2,1),padding .28s ease,opacity .25s ease;opacity:1}
+.p-group.collapsed .p-swatches{max-height:0;padding-top:0;padding-bottom:0;opacity:0}
 
 /* SWATCHES */
 .sw-btn{aspect-ratio:1;border-radius:4px;border:2px solid transparent;cursor:grab;position:relative;overflow:hidden;transition:transform .15s,border-color .15s;background:var(--bg);flex-shrink:0}
@@ -148,6 +148,137 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 /* TOAST */
 #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--text);color:#fff;font-size:12px;padding:9px 18px;border-radius:40px;white-space:nowrap;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ── Spinner upgrade ── */
+.spinner{width:32px;height:32px;border:none;position:relative;margin-bottom:10px;animation:none}
+.spinner::before,.spinner::after{content:'';position:absolute;inset:0;border-radius:50%}
+.spinner::before{border:2px solid var(--border)}
+.spinner::after{border:2px solid transparent;border-top-color:var(--accent);animation:spin .75s cubic-bezier(.6,.1,.4,.9) infinite}
+.load-bar{width:110px;height:2px;background:rgba(0,0,0,.08);border-radius:2px;margin-top:14px;overflow:hidden}
+.load-bar-inner{height:100%;width:40%;background:var(--accent);border-radius:2px;animation:lbar 1.5s ease-in-out infinite}
+@keyframes lbar{0%{transform:translateX(-200%)}100%{transform:translateX(400%)}}
+
+/* ── Panel header actions ── */
+.panel-actions{padding:8px 20px 12px;border-bottom:1px solid var(--border)}
+.btn-find-fabric{
+  width:100%;padding:8px 12px;font-family:var(--font-b);font-size:10px;font-weight:500;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--warm);
+  background:linear-gradient(135deg,#fdf7ef 0%,#fbf3e8 100%);
+  border:1px solid var(--warm-light);border-radius:var(--r);cursor:pointer;
+  transition:all .18s ease;display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.btn-find-fabric:hover{background:var(--warm);color:#fff;border-color:var(--warm);box-shadow:0 3px 12px rgba(139,111,71,.22)}
+
+/* ── Custom GLB tag ── */
+.custom-model-tag{
+  display:inline-block;font-size:8px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--warm);background:#fdf7ef;border:1px solid var(--warm-light);
+  border-radius:2px;padding:1px 5px;margin-left:5px;vertical-align:middle;
+  animation:tagpop .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes tagpop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.btn-upload-glb{font-size:16px !important;line-height:1 !important;padding:0 !important}
+
+/* ── Group header hover ── */
+.p-group-hdr:hover{background:var(--bg)}
+.p-group-hdr{transition:background .15s}
+
+/* ── Fabric Finder Modal ── */
+#finder-overlay{
+  position:fixed;inset:0;
+  background:rgba(26,22,18,.62);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  z-index:500;display:none;align-items:center;justify-content:center;padding:16px;
+}
+#finder-overlay.open{display:flex}
+#finder-modal{
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  width:min(720px,100%);max-height:94vh;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 40px 100px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.6);
+  animation:modin .3s cubic-bezier(.34,1.1,.64,1);
+}
+@keyframes modin{from{opacity:0;transform:scale(.94) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.finder-hdr{
+  padding:20px 24px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;
+}
+.finder-title{font-family:var(--font-d);font-size:17px;letter-spacing:.01em;color:var(--text);margin-bottom:3px}
+.finder-sub{font-size:11px;color:var(--text-muted);line-height:1.5}
+.finder-close{
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);background:transparent;color:var(--text-muted);
+  cursor:pointer;border-radius:var(--r);font-size:16px;line-height:1;flex-shrink:0;margin-top:2px;
+  transition:all .15s;
+}
+.finder-close:hover{border-color:var(--border-strong);color:var(--text);background:var(--bg)}
+.finder-body{padding:20px 24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px}
+.finder-input-area{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start}
+#finder-drop-zone{
+  border:1.5px dashed var(--border-strong);border-radius:6px;cursor:pointer;
+  position:relative;overflow:hidden;aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);transition:border-color .18s,background .18s;
+}
+#finder-drop-zone:hover{border-color:var(--accent);background:var(--accent-pale)}
+#finder-drop-zone.has-img{border-style:solid;border-color:var(--accent)}
+#finder-drop-content{text-align:center;padding:14px;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px}
+.finder-drop-ico{font-size:24px;opacity:.38;line-height:1}
+.finder-drop-lbl{font-size:11px;font-weight:500;color:var(--text-mid)}
+.finder-drop-hint{font-size:9px;color:var(--text-muted);letter-spacing:.02em}
+#finder-img-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.finder-img-clear{
+  position:absolute;top:5px;right:5px;width:22px;height:22px;
+  background:rgba(26,22,18,.78);color:#fff;border:none;border-radius:50%;
+  font-size:11px;cursor:pointer;z-index:2;
+  display:none;align-items:center;justify-content:center;line-height:1;
+  transition:background .15s;
+}
+.finder-img-clear:hover{background:rgba(26,22,18,.95)}
+#finder-drop-zone.has-img .finder-img-clear{display:flex}
+.finder-fields{display:flex;flex-direction:column;gap:10px}
+#finder-desc{
+  resize:none;border:1px solid var(--border);border-radius:var(--r);
+  background:var(--bg);padding:10px 12px;
+  font-family:var(--font-b);font-size:12px;color:var(--text);outline:none;
+  min-height:88px;line-height:1.55;transition:border-color .15s;
+}
+#finder-desc:focus{border-color:var(--accent)}
+#finder-desc::placeholder{color:var(--text-muted)}
+.finder-type-row{display:flex;gap:8px}
+#finder-material-type{
+  flex:1;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);
+  padding:8px 10px;font-family:var(--font-b);font-size:11px;color:var(--text);outline:none;cursor:pointer;
+}
+#finder-btn{
+  padding:9px 20px;font-family:var(--font-b);font-size:11px;font-weight:500;
+  letter-spacing:.07em;text-transform:uppercase;color:#fff;
+  background:var(--accent);border:1px solid var(--accent);border-radius:var(--r);
+  cursor:pointer;transition:background .18s;white-space:nowrap;
+}
+#finder-btn:hover{background:var(--accent-light)}
+#finder-btn:disabled{opacity:.5;cursor:wait}
+#finder-results-area{display:none;border-top:1px solid var(--border);padding-top:16px}
+.finder-results-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+#finder-results-title{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.finder-results-hint{font-size:10px;color:var(--text-muted);font-style:italic}
+#finder-results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.tex-card{
+  border:1.5px solid var(--border);border-radius:5px;overflow:hidden;
+  cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s;background:var(--bg);
+}
+.tex-card:hover{border-color:var(--accent);transform:scale(1.05);box-shadow:0 6px 22px rgba(0,0,0,.14)}
+.tex-card:active{transform:scale(.98)}
+.tex-card-thumb{aspect-ratio:1;overflow:hidden;background:var(--border)}
+.tex-card-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
+.tex-card:hover .tex-card-thumb img{transform:scale(1.08)}
+.tex-card-info{padding:5px 7px 6px}
+.tex-card-name{font-size:9px;font-weight:500;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:capitalize}
+.tex-card-src{font-size:8px;margin-top:1px;text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.tex-card-src.ph{color:#c87020}
+.tex-card-src.acg{color:#2a6aa0}
+.finder-state{grid-column:1/-1;text-align:center;padding:28px 20px;font-size:12px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:10px}
+.finder-state-spin{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 </style>
 </head>
 <body>
@@ -163,6 +294,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
   </div>
   <div class="header-right">
     <button class="btn-icon" title="Reset" onclick="resetAll()">↺</button>
+    <button class="btn-icon btn-upload-glb" title="Upload custom GLB model" onclick="document.getElementById('glb-input').click()">⬆</button>
     <button class="btn-room" id="btn-room-view" onclick="toggleRoomView()">🏠 Room View</button>
     <button class="btn-render" onclick="renderScene()">Render</button>
     <button class="btn-export" onclick="exportGLB()">Export GLB</button>
@@ -176,6 +308,12 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
       <div class="panel-title" id="lib-title">Chair Fabrics</div>
       <div class="panel-sub" id="lib-sub">MityLite Sierra Collection · Drag to part</div>
     </div>
+    <div class="panel-actions">
+      <button class="btn-find-fabric" onclick="openFabricFinder()">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        Find Fabric by Image or Description
+      </button>
+    </div>
     <div class="fabric-scroll" id="fab-scroll"></div>
   </div>
 
@@ -185,6 +323,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
     <div id="loading">
       <div class="spinner"></div>
       <div id="load-txt">Loading Model…</div>
+      <div class="load-bar"><div class="load-bar-inner"></div></div>
     </div>
     <div class="v-hint" id="v-hint" style="display:none">
       <span><span class="h-key">drag</span> Orbit</span>
@@ -305,6 +444,64 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 
 <!-- Drag ghost element -->
 <div id="drag-ghost"><img id="drag-ghost-img" src="" alt=""></div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="glb-input" accept=".glb,.gltf" style="display:none" onchange="handleGLBUpload(this)">
+<input type="file" id="finder-img-input" accept="image/*" style="display:none" onchange="handleFinderImage(this)">
+
+<!-- Fabric Finder Modal -->
+<div id="finder-overlay" onclick="if(event.target===this)closeFabricFinder()">
+  <div id="finder-modal">
+    <div class="finder-hdr">
+      <div>
+        <div class="finder-title">Find Similar Fabric</div>
+        <div class="finder-sub">Upload a reference image, describe the material, or both — we'll search PolyHaven &amp; AmbientCG for matching PBR textures</div>
+      </div>
+      <button class="finder-close" onclick="closeFabricFinder()">✕</button>
+    </div>
+    <div class="finder-body">
+      <div class="finder-input-area">
+        <div id="finder-drop-zone" onclick="document.getElementById('finder-img-input').click()">
+          <div id="finder-drop-content">
+            <div class="finder-drop-ico">🖼</div>
+            <div class="finder-drop-lbl">Upload Image</div>
+            <div class="finder-drop-hint">optional reference</div>
+          </div>
+          <img id="finder-img-preview" style="display:none" alt="preview">
+          <button class="finder-img-clear" onclick="clearFinderImage(event)" title="Remove image">✕</button>
+        </div>
+        <div class="finder-fields">
+          <textarea id="finder-desc" placeholder="Describe the fabric… e.g. dark navy textured weave, similar to velvet but more structured, matte finish" rows="4"></textarea>
+          <div class="finder-type-row">
+            <select id="finder-material-type">
+              <option value="">Any material type</option>
+              <option value="fabric">Fabric / Textile</option>
+              <option value="leather">Leather</option>
+              <option value="vinyl">Vinyl / PU</option>
+              <option value="linen">Linen</option>
+              <option value="velvet">Velvet</option>
+              <option value="cotton">Cotton</option>
+              <option value="suede">Suede</option>
+              <option value="wool">Wool</option>
+              <option value="wood">Wood</option>
+              <option value="carpet">Carpet / Rug</option>
+            </select>
+            <button id="finder-btn" onclick="searchFabrics()">
+              <span id="finder-btn-txt">Find Fabrics</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="finder-results-area">
+        <div class="finder-results-hdr">
+          <span id="finder-results-title">Results</span>
+          <span class="finder-results-hint">Click any fabric to apply to selected parts</span>
+        </div>
+        <div id="finder-results-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -1404,7 +1601,7 @@ function buildLibrary() {
   const groups = LIBRARY[currentModelKey];
   groups.forEach((group, gi) => {
     const gEl=document.createElement('div');
-    gEl.className='p-group';
+    gEl.className='p-group collapsed'; // start closed; user clicks to expand
     const hdr=document.createElement('div');
     hdr.className='p-group-hdr';
     hdr.innerHTML=`<div><div class="p-name">${group.group}</div><div style="margin-top:3px"><span class="vbadge ${group.vclass}">${group.vendor}</span></div></div><div class="p-arrow">▾</div>`;
@@ -1995,6 +2192,320 @@ function loadScripts(urls){
     const s=document.createElement('script');s.src=url;s.onload=res;s.onerror=rej;document.head.appendChild(s);
   })),Promise.resolve());
 }
+
+// ── GLB Upload ────────────────────────────────────────────────────────────
+function handleGLBUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.toLowerCase().split('.').pop();
+  if (ext !== 'glb' && ext !== 'gltf') { showToast('Please select a .glb or .gltf file'); return; }
+  if (window._customGLBUrl) URL.revokeObjectURL(window._customGLBUrl);
+  window._customGLBUrl = URL.createObjectURL(file);
+  const label = file.name.replace(/\.(glb|gltf)$/i, '');
+  showToast('Loading ' + label + '…');
+  loadModel(window._customGLBUrl);
+  // Tag active tab with "Custom"
+  ['tab-chair','tab-sofa'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.querySelectorAll('.custom-model-tag').forEach(t => t.remove());
+  });
+  const activeTab = document.getElementById('tab-' + currentModelKey);
+  if (activeTab) {
+    const tag = document.createElement('span');
+    tag.className = 'custom-model-tag';
+    tag.textContent = 'Custom';
+    activeTab.appendChild(tag);
+  }
+  input.value = '';
+}
+
+// ── Fabric Finder ─────────────────────────────────────────────────────────
+let _finderImgData = null;
+let _phCache = null; // PolyHaven asset list cache
+
+function openFabricFinder() {
+  document.getElementById('finder-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('finder-desc').focus(), 80);
+}
+
+function closeFabricFinder() {
+  document.getElementById('finder-overlay').classList.remove('open');
+}
+
+function handleFinderImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _finderImgData = e.target.result.split(',')[1];
+    const preview = document.getElementById('finder-img-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('finder-drop-content').style.display = 'none';
+    document.getElementById('finder-drop-zone').classList.add('has-img');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFinderImage(e) {
+  e.stopPropagation();
+  _finderImgData = null;
+  const preview = document.getElementById('finder-img-preview');
+  preview.src = ''; preview.style.display = 'none';
+  document.getElementById('finder-drop-content').style.display = '';
+  document.getElementById('finder-drop-zone').classList.remove('has-img');
+  document.getElementById('finder-img-input').value = '';
+}
+
+async function searchFabrics() {
+  const desc = document.getElementById('finder-desc').value.trim();
+  const matType = document.getElementById('finder-material-type').value;
+  if (!desc && !_finderImgData) { showToast('Add an image or describe the fabric'); return; }
+
+  const btn = document.getElementById('finder-btn');
+  btn.disabled = true;
+  document.getElementById('finder-btn-txt').textContent = 'Searching…';
+
+  const resultsArea = document.getElementById('finder-results-area');
+  const resultsGrid = document.getElementById('finder-results-grid');
+  resultsArea.style.display = 'block';
+  resultsGrid.innerHTML = '<div class="finder-state"><div class="finder-state-spin"></div><span>Scanning fabric libraries…</span></div>';
+  document.getElementById('finder-results-title').textContent = 'Searching…';
+
+  try {
+    let aiKeywords = [];
+    let aiPolyIds = [];
+
+    // Try AI endpoint for smarter matching
+    const hasApi = await _checkEndpoint('/api/find-fabric');
+    if (hasApi) {
+      try {
+        const r = await fetch('/api/find-fabric', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ description: [desc, matType].filter(Boolean).join(' '), imageData: _finderImgData }),
+          signal: AbortSignal.timeout(18000),
+        });
+        if (r.ok) {
+          const d = await r.json();
+          aiKeywords = d.keywords || [];
+          aiPolyIds  = d.polyhavenIds || [];
+        }
+      } catch(e) { console.warn('find-fabric API skipped:', e.message); }
+    }
+
+    // Build keyword list (AI + manual extraction)
+    let keywords = [...aiKeywords];
+    if (!keywords.length && desc) {
+      keywords = desc.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    }
+    if (matType) keywords = [...new Set([...keywords, matType])];
+
+    const [phRes, acgRes] = await Promise.allSettled([
+      _searchPolyHaven(keywords, matType),
+      _searchAmbientCG(keywords.slice(0, 4).join(' ') || 'fabric'),
+    ]);
+
+    // Prepend any direct AI-suggested PolyHaven IDs
+    const directPH = aiPolyIds.map(id => ({
+      id, source:'polyhaven', name: id.replace(/_/g,' '),
+      thumb:`https://cdn.polyhaven.com/asset_img/thumbs/${id}.png?width=200`,
+    }));
+
+    const all = [
+      ...directPH,
+      ...(phRes.status==='fulfilled' ? phRes.value : []),
+      ...(acgRes.status==='fulfilled' ? acgRes.value : []),
+    ];
+
+    // Deduplicate
+    const seen = new Set();
+    const unique = all.filter(r => { if(seen.has(r.id)) return false; seen.add(r.id); return true; });
+
+    _renderFinderResults(unique.slice(0, 28));
+    document.getElementById('finder-results-title').textContent =
+      unique.length ? `${unique.length} fabric${unique.length!==1?'s':''} found` : 'No results';
+
+  } catch(e) {
+    console.error('searchFabrics:', e);
+    resultsGrid.innerHTML = '<div class="finder-state">Search failed — try different keywords.</div>';
+    document.getElementById('finder-results-title').textContent = 'Error';
+  } finally {
+    btn.disabled = false;
+    document.getElementById('finder-btn-txt').textContent = 'Find Fabrics';
+  }
+}
+
+async function _checkEndpoint(path) {
+  try {
+    const r = await fetch(path, { method:'HEAD', signal: AbortSignal.timeout(3000) });
+    return r.status !== 404;
+  } catch(_) { return false; }
+}
+
+async function _searchPolyHaven(keywords, matType) {
+  if (!_phCache) {
+    const r = await fetch('https://api.polyhaven.com/assets?type=textures', { signal: AbortSignal.timeout(9000) });
+    if (!r.ok) throw new Error('PolyHaven unreachable');
+    _phCache = await r.json();
+  }
+
+  const fabricHints = ['fabric','cloth','textile','wool','linen','cotton','leather','velvet','silk','weave','knit','tweed','burlap','suede','denim','canvas','jute','hemp','upholstery','cushion'];
+  const kws = [...keywords.map(k => k.toLowerCase())];
+  if (matType) kws.push(matType.toLowerCase());
+
+  const scored = Object.entries(_phCache).map(([id, data]) => {
+    const blob = [id, data.name||'', ...(data.categories||[]), ...(data.tags||[])].join(' ').toLowerCase();
+    let score = 0;
+    for (const k of kws) { if (blob.includes(k)) score += 3; }
+    for (const f of fabricHints) { if (blob.includes(f)) score += 1; }
+    return { id, score, name: (data.name || id).replace(/_/g,' ') };
+  });
+
+  return scored
+    .filter(s => s.score > 0)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 18)
+    .map(s => ({
+      id: s.id, source: 'polyhaven', name: s.name,
+      thumb: `https://cdn.polyhaven.com/asset_img/thumbs/${s.id}.png?width=200`,
+    }));
+}
+
+async function _searchAmbientCG(query) {
+  const url = `https://ambientcg.com/api/v2/full_json?type=Atlas&sort=Popular&limit=10&q=${encodeURIComponent(query)}`;
+  const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
+  if (!r.ok) throw new Error('AmbientCG unreachable');
+  const data = await r.json();
+  return (data.foundAssets || []).map(a => ({
+    id: a.assetId, source: 'ambientcg',
+    name: (a.displayName || a.assetId).replace(/([A-Z])/g, ' $1').trim(),
+    thumb: a.previewImage || null,
+  }));
+}
+
+function _renderFinderResults(results) {
+  const grid = document.getElementById('finder-results-grid');
+  if (!results.length) {
+    grid.innerHTML = '<div class="finder-state">No matching fabrics found.<br>Try different terms — e.g. "woven linen beige" or "dark velvet".</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  results.forEach(result => {
+    const card = document.createElement('div');
+    card.className = 'tex-card';
+    card.title = `${result.name} — click to apply to selected parts`;
+    const thumb = document.createElement('div');
+    thumb.className = 'tex-card-thumb';
+    if (result.thumb) {
+      const img = document.createElement('img');
+      img.src = result.thumb; img.alt = result.name; img.crossOrigin = 'anonymous';
+      img.onerror = () => { thumb.style.background='var(--border-strong)'; img.remove(); };
+      thumb.appendChild(img);
+    }
+    const info = document.createElement('div');
+    info.className = 'tex-card-info';
+    const nm = document.createElement('div');
+    nm.className = 'tex-card-name'; nm.textContent = result.name;
+    const src = document.createElement('div');
+    src.className = 'tex-card-src ' + (result.source==='polyhaven'?'ph':'acg');
+    src.textContent = result.source==='polyhaven' ? 'PolyHaven' : 'AmbientCG';
+    info.appendChild(nm); info.appendChild(src);
+    card.appendChild(thumb); card.appendChild(info);
+    card.addEventListener('click', () => _applyFoundTexture(result));
+    grid.appendChild(card);
+  });
+}
+
+async function _applyFoundTexture(result) {
+  const selected = roomMode
+    ? meshEntries.filter(e => e.pieceSelected)
+    : meshEntries.filter(e => e.checked);
+  if (!selected.length) { showToast('Select a part first →'); return; }
+
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('load-txt').textContent = 'Loading Texture…';
+
+  try {
+    let diffUrl = null, normUrl = null, roughUrl = null;
+
+    if (result.source === 'polyhaven') {
+      // Get normal + roughness via existing helper
+      const maps = await getPolyMaps(result.id);
+      normUrl  = maps.normUrl;
+      roughUrl = maps.roughUrl;
+      // Also fetch full manifest for the diffuse/color map
+      const filesResp = await fetch(`${POLY_API}${result.id}`);
+      if (filesResp.ok) {
+        const files = await filesResp.json();
+        const colorKeys = ['Color','color','Diffuse','diffuse','Albedo','albedo','diff','Diff','col','Col'];
+        for (const key of colorKeys) {
+          const entry = files[key] || files[Object.keys(files).find(k => k.toLowerCase()===key.toLowerCase())||''];
+          if (entry) {
+            diffUrl = entry?.['1k']?.jpg?.url || entry?.['2k']?.jpg?.url;
+            if (diffUrl) break;
+          }
+        }
+      }
+    } else {
+      // AmbientCG: construct 1K map URLs from their CDN pattern
+      const id = result.id;
+      diffUrl  = `https://ambientcg.com/get?q=${id}-Color&res=1K`;
+      normUrl  = `https://ambientcg.com/get?q=${id}-NormalGL&res=1K`;
+      roughUrl = `https://ambientcg.com/get?q=${id}-Roughness&res=1K`;
+    }
+
+    const defs = { roughness:0.72, sheen:0.10, metalness:0.0, scale:10.0, norm:1.0 };
+    sRoughness=defs.roughness; sMetalness=defs.metalness; sSheen=defs.sheen; sScale=defs.scale; sNorm=defs.norm;
+    setSliderVal('brightness',1); setSliderVal('roughness',defs.roughness);
+    setSliderVal('metalness',defs.metalness); setSliderVal('sheen',defs.sheen,2);
+    setSliderVal('scale',defs.scale,1); setSliderVal('norm',defs.norm,1);
+    setSliderVal('brightness-r',1); setSliderVal('roughness-r',defs.roughness); setSliderVal('scale-r',defs.scale,1);
+
+    const srcLabel = result.source==='polyhaven' ? 'PolyHaven' : 'AmbientCG';
+    ['','room'].forEach(sfx => {
+      const n=document.getElementById('app-name'+(sfx?'-'+sfx:''));
+      const v=document.getElementById('app-vend'+(sfx?'-'+sfx:''));
+      const sw=document.getElementById('app-sw'+(sfx?'-'+sfx:''));
+      if(n) n.textContent=result.name;
+      if(v) v.textContent=srcLabel+' · Found Fabric';
+      if(sw){sw.innerHTML='';sw.style.background='#c8c0b8';}
+    });
+
+    const [diffTex,normTex,roughTex] = await Promise.all([
+      diffUrl  ? tryLoadTex(diffUrl,  true).catch(()=>null)  : Promise.resolve(null),
+      normUrl  ? tryLoadTex(normUrl,  false).catch(()=>null) : Promise.resolve(null),
+      roughUrl ? tryLoadTex(roughUrl, false).catch(()=>null) : Promise.resolve(null),
+    ]);
+
+    selected.forEach(entry => {
+      const mat = entry.greyMat;
+      const physRepeat = sScale*(entry.uvScaleFactor/BASE_TILE);
+      mat.color.setRGB(1,1,1);
+      if(diffTex){const dt=diffTex.clone();dt.wrapS=dt.wrapT=THREE.RepeatWrapping;dt.repeat.set(physRepeat,physRepeat);dt.needsUpdate=true;mat.map=dt;mat.color.setRGB(sBrightness,sBrightness,sBrightness);}
+      else{mat.map=null;mat.color.setRGB(0.8*sBrightness,0.78*sBrightness,0.75*sBrightness);}
+      if(normTex){const nt=normTex.clone();nt.wrapS=nt.wrapT=THREE.RepeatWrapping;nt.repeat.set(physRepeat,physRepeat);nt.needsUpdate=true;mat.normalMap=nt;mat.normalScale.set(sNorm,sNorm);}else{mat.normalMap=null;}
+      if(roughTex){const rt=roughTex.clone();rt.wrapS=rt.wrapT=THREE.RepeatWrapping;rt.repeat.set(physRepeat,physRepeat);rt.needsUpdate=true;mat.roughnessMap=rt;}else{mat.roughnessMap=null;}
+      mat.roughness=sRoughness;mat.metalness=sMetalness;mat.sheen=sSheen;mat.needsUpdate=true;
+      if(Array.isArray(entry.mesh.material)){const arr=[...entry.mesh.material];arr[entry.matIndex]=mat;entry.mesh.material=arr;}
+    });
+
+    markDirty();
+    modelMaterialSnapshots[currentModelKey] = meshEntries.map(e=>({id:e.id,name:e.name,matClone:e.greyMat.clone()}));
+    showToast(result.name+' applied!');
+    closeFabricFinder();
+  } catch(e) {
+    console.error('_applyFoundTexture:', e);
+    showToast('Failed to apply texture');
+  } finally {
+    document.getElementById('loading').classList.remove('on');
+  }
+}
+
+// Close finder on Escape
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') closeFabricFinder();
+});
 
 loadScripts([
   'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js',
