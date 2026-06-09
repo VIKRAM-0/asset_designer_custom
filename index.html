@@ -212,149 +212,166 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 
 /* ── Fabric Finder Modal ── */
 #finder-overlay{
-  position:fixed;inset:0;
-  background:rgba(15,23,42,.55);
+  position:fixed;inset:0;background:rgba(15,23,42,.55);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   z-index:500;display:none;align-items:center;justify-content:center;padding:16px;
 }
 #finder-overlay.open{display:flex}
 #finder-modal{
-  background:var(--panel);border:1px solid var(--border);border-radius:10px;
-  width:min(720px,100%);max-height:94vh;
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  width:min(860px,100%);max-height:92vh;
   display:flex;flex-direction:column;overflow:hidden;
-  box-shadow:0 40px 100px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.6);
-  animation:modin .3s cubic-bezier(.34,1.1,.64,1);
+  box-shadow:0 24px 80px rgba(0,0,0,.2),0 0 0 1px rgba(255,255,255,.5);
+  animation:modin .28s cubic-bezier(.34,1.1,.64,1);
 }
-@keyframes modin{from{opacity:0;transform:scale(.94) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes modin{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
 .finder-hdr{
-  padding:20px 24px 16px;border-bottom:1px solid var(--border);
+  padding:16px 22px 13px;border-bottom:1px solid var(--border);
   display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;
 }
-.finder-title{font-family:var(--font-d);font-size:17px;letter-spacing:.01em;color:var(--text);margin-bottom:3px}
-.finder-sub{font-size:11px;color:var(--text-muted);line-height:1.5}
+.finder-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;letter-spacing:-.01em}
+.finder-sub{font-size:11px;color:var(--text-muted);line-height:1.45}
 .finder-close{
-  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
   border:1px solid var(--border);background:transparent;color:var(--text-muted);
-  cursor:pointer;border-radius:var(--r);font-size:16px;line-height:1;flex-shrink:0;margin-top:2px;
+  cursor:pointer;border-radius:var(--r);font-size:14px;flex-shrink:0;
   transition:all .15s;
 }
 .finder-close:hover{border-color:var(--border-strong);color:var(--text);background:var(--bg)}
-.finder-body{padding:20px 24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px}
-.finder-input-area{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start}
+
+/* 2-column layout */
+.finder-body-2col{display:grid;grid-template-columns:310px 1fr;overflow:hidden;flex:1;min-height:0}
+.finder-left{
+  padding:16px 18px 16px 22px;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;gap:11px;overflow-y:auto;
+}
+.finder-right{
+  padding:16px 22px 16px 18px;background:var(--surface);
+  display:flex;flex-direction:column;gap:12px;overflow-y:auto;
+}
+
+/* Drop zone */
 #finder-drop-zone{
-  border:1.5px dashed var(--border-strong);border-radius:6px;cursor:pointer;
-  position:relative;overflow:hidden;aspect-ratio:1;
+  border:1.5px dashed var(--border-strong);border-radius:8px;cursor:pointer;
+  position:relative;overflow:hidden;height:160px;
   display:flex;align-items:center;justify-content:center;
-  background:var(--bg);transition:border-color .18s,background .18s;
+  background:var(--panel);transition:border-color .18s,background .18s;
 }
 #finder-drop-zone:hover{border-color:var(--accent);background:var(--accent-pale)}
 #finder-drop-zone.has-img{border-style:solid;border-color:var(--accent)}
-#finder-drop-content{text-align:center;padding:14px;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px}
-.finder-drop-ico{font-size:24px;opacity:.38;line-height:1}
+#finder-drop-content{
+  text-align:center;padding:12px;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+}
+.finder-drop-ico{
+  width:34px;height:34px;border-radius:50%;background:var(--bg);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;margin-bottom:3px;color:var(--text-muted);
+}
 .finder-drop-lbl{font-size:11px;font-weight:500;color:var(--text-mid)}
-.finder-drop-hint{font-size:9px;color:var(--text-muted);letter-spacing:.02em}
+.finder-drop-hint{font-size:9px;color:var(--text-muted)}
 #finder-img-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 .finder-img-clear{
-  position:absolute;top:5px;right:5px;width:22px;height:22px;
+  position:absolute;top:6px;right:6px;width:22px;height:22px;
   background:rgba(15,23,42,.75);color:#fff;border:none;border-radius:50%;
   font-size:11px;cursor:pointer;z-index:2;
-  display:none;align-items:center;justify-content:center;line-height:1;
-  transition:background .15s;
+  display:none;align-items:center;justify-content:center;line-height:1;transition:background .15s;
 }
 .finder-img-clear:hover{background:rgba(15,23,42,.95)}
 #finder-drop-zone.has-img .finder-img-clear{display:flex}
-.finder-fields{display:flex;flex-direction:column;gap:10px}
 
-#finder-material-type{
-  flex:1;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);
-  padding:8px 10px;font-family:var(--font-b);font-size:11px;color:var(--text);outline:none;cursor:pointer;
+.finder-choose-btn{
+  display:block;width:100%;padding:7px 14px;font-family:var(--font-b);font-size:11px;font-weight:500;
+  color:var(--text-mid);background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r);cursor:pointer;transition:all .15s;text-align:center;
 }
-#finder-btn{
-  padding:9px 20px;font-family:var(--font-b);font-size:11px;font-weight:500;
-  letter-spacing:.07em;text-transform:uppercase;color:#fff;
-  background:var(--accent);border:1px solid var(--accent);border-radius:var(--r);
-  cursor:pointer;transition:background .18s;white-space:nowrap;
-}
-#finder-btn:hover{background:var(--accent-light)}
-#finder-btn:disabled{opacity:.5;cursor:wait}
+.finder-choose-btn:hover{border-color:var(--border-strong);color:var(--text);background:var(--bg)}
 
-/* ── Add Custom Fabric modal – new field styles ── */
-.finder-field-row{display:flex;flex-direction:column;gap:5px}
-.finder-lbl{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)}
+/* Form fields */
+.finder-form-grid{display:flex;flex-direction:column;gap:9px}
+.finder-form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.finder-field-row{display:flex;flex-direction:column;gap:4px}
+.finder-lbl{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)}
 .finder-input{
-  border:1px solid var(--border);border-radius:var(--r);background:var(--bg);
-  padding:9px 11px;font-family:var(--font-b);font-size:12px;color:var(--text);
-  outline:none;transition:border-color .15s;
+  border:1px solid var(--border);border-radius:var(--r);background:var(--panel);
+  padding:7px 9px;font-family:var(--font-b);font-size:12px;color:var(--text);
+  outline:none;transition:border-color .15s;width:100%;
 }
 .finder-input:focus{border-color:var(--accent)}
-.finder-input::placeholder{color:var(--text-muted)}
+.finder-input::placeholder{color:var(--text-muted);font-size:11px}
 .finder-select{
-  border:1px solid var(--border);border-radius:var(--r);background:var(--bg);
-  padding:9px 11px;font-family:var(--font-b);font-size:12px;color:var(--text);
-  outline:none;cursor:pointer;appearance:auto;
+  border:1px solid var(--border);border-radius:var(--r);background:var(--panel);
+  padding:7px 9px;font-family:var(--font-b);font-size:12px;color:var(--text);
+  outline:none;cursor:pointer;appearance:auto;width:100%;
 }
-/* Analysis result card */
-#finder-analysis{
-  border:1px solid var(--border);border-radius:5px;padding:11px 13px;
-  background:var(--bg);display:none;
-  animation:fadeSlideIn .25s ease;
-}
-@keyframes fadeSlideIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.finder-analysis-chip{
-  display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap;
-}
-.finder-analysis-label{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
-.finder-analysis-val{font-size:12px;font-weight:500;color:var(--text);font-family:var(--font-d)}
-.finder-analysis-sep{color:var(--border-strong)}
-.finder-analysis-type{
-  font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
-  color:#1D4ED8;background:#EFF6FF;border:1px solid #93C5FD;
-  border-radius:3px;padding:2px 6px;
-}
-.finder-analysis-desc{font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.5;font-style:italic}
-.finder-analysis-props{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
-}
-.finder-prop{
-  background:var(--panel);border:1px solid var(--border);border-radius:4px;
-  padding:6px 8px;text-align:center;
-}
-.finder-prop span:first-child{display:block;font-size:8px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px}
-.finder-prop span:last-child{display:block;font-size:12px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.finder-select:focus{border-color:var(--accent)}
+.finder-scale-row{display:flex;flex-direction:column;gap:4px}
+.finder-scale-inputs{display:flex;align-items:center;gap:6px}
+.finder-input-sm{width:64px !important;text-align:center}
+.finder-scale-sep{color:var(--text-muted);font-size:13px;user-select:none;flex-shrink:0}
 
-/* ── My Fabrics – custom group empty hint ── */
-.custom-empty-hint{
-  padding:10px 14px 14px;font-size:11px;color:var(--text-muted);
-  text-align:center;line-height:1.5;font-style:italic;
-}
+/* ── Right panel ── */
+.finder-right-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.finder-right-title{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.finder-right-dot{width:6px;height:6px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.18);display:none}
+.finder-right-dot.active{display:block}
 
-/* ── Search results area ── */
-#finder-results-area{
-  border-top:1px solid var(--border);padding-top:16px;
-  animation:fadeSlideIn .22s ease;
+.finder-preview-box{
+  width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;
+  background:#141824;position:relative;border:1px solid rgba(255,255,255,.07);
 }
-.finder-results-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-#finder-results-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.finder-preview-box img{width:100%;height:100%;object-fit:cover;display:block}
+.finder-preview-placeholder{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:7px;
+}
+.finder-preview-ph-ico{font-size:26px;opacity:.18}
+.finder-preview-ph-lbl{font-size:10px;color:rgba(255,255,255,.22);letter-spacing:.04em}
+
+/* Props rows (after AI analysis) */
+.finder-props-rows{display:flex;flex-direction:column;gap:5px;animation:fadeSlideIn .2s ease}
+.finder-prop-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);
+}
+.finder-prop-row-lbl{font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:7px}
+.finder-prop-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.finder-prop-row-val{font-size:11px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.finder-prop-row-tag{
+  font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  color:#1D4ED8;background:#EFF6FF;border:1px solid #93C5FD;border-radius:3px;padding:2px 7px;
+}
+.finder-prop-row-muted{font-size:10px;color:var(--text-muted);font-style:italic}
+.finder-prop-row-action{font-size:10px;color:var(--warm);cursor:pointer;font-weight:500}
+
+/* Quick filters */
+.finder-filter-section{display:flex;flex-direction:column;gap:7px}
+.finder-filter-label{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
 .finder-quick-filters{display:flex;gap:5px;flex-wrap:wrap}
 .finder-chip{
-  padding:4px 11px;font-size:10px;font-weight:500;letter-spacing:.03em;
+  padding:4px 10px;font-size:10px;font-weight:500;
   border:1px solid var(--border);border-radius:40px;background:var(--panel);
   color:var(--text-mid);cursor:pointer;transition:all .15s;
 }
 .finder-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-pale)}
 .finder-chip.active{border-color:var(--accent);background:var(--accent);color:#fff}
-#finder-results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+
+/* Search results */
+#finder-results-area{animation:fadeSlideIn .2s ease;margin-top:2px}
+.finder-results-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+#finder-results-title{font-size:9px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted)}
+#finder-results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:7px}
 .tex-card{
   border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;
-  cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s;background:var(--panel);
-  position:relative;
+  cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s;background:var(--panel);position:relative;
 }
-.tex-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.tex-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.1)}
 .tex-card:active{transform:scale(.98)}
 .tex-card-thumb{aspect-ratio:1;overflow:hidden;background:var(--border)}
 .tex-card-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
 .tex-card:hover .tex-card-thumb img{transform:scale(1.08)}
-.tex-card-info{padding:5px 7px 6px}
+.tex-card-info{padding:4px 6px 5px}
 .tex-card-name{font-size:9px;font-weight:500;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:capitalize}
 .tex-card-src{font-size:8px;margin-top:1px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
 .tex-card-src.ph{color:#C2410C}
@@ -362,11 +379,44 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 .tex-card-adding{
   position:absolute;inset:0;background:rgba(243,244,246,.92);
   display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:500;color:var(--text-mid);
-  border-radius:var(--r);
+  font-size:10px;font-weight:500;color:var(--text-mid);border-radius:var(--r);
 }
-.finder-state{grid-column:1/-1;text-align:center;padding:28px 20px;font-size:12px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:10px}
-.finder-state-spin{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.finder-state{grid-column:1/-1;text-align:center;padding:20px 14px;font-size:11px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:8px}
+.finder-state-spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.finder-hint-text{font-size:10px;color:var(--text-muted);line-height:1.5;text-align:center;margin-top:auto;padding-top:4px;font-style:italic}
+
+/* Footer */
+.finder-footer{
+  padding:12px 22px;border-top:1px solid var(--border);flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel);
+}
+.finder-footer-cancel{
+  padding:7px 14px;font-family:var(--font-b);font-size:11px;font-weight:500;
+  color:var(--text-mid);background:transparent;border:none;cursor:pointer;border-radius:var(--r);
+  transition:color .15s;
+}
+.finder-footer-cancel:hover{color:var(--text)}
+.finder-footer-actions{display:flex;gap:7px;align-items:center}
+.finder-footer-save{
+  padding:7px 15px;font-family:var(--font-b);font-size:11px;font-weight:500;
+  color:var(--text);background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r);cursor:pointer;transition:all .15s;
+}
+.finder-footer-save:hover{border-color:var(--border-strong);background:var(--bg)}
+.finder-footer-save:disabled{opacity:.4;cursor:default}
+.finder-footer-generate{
+  padding:7px 16px;font-family:var(--font-b);font-size:11px;font-weight:600;letter-spacing:.04em;
+  color:#fff;background:var(--accent);border:1px solid var(--accent);
+  border-radius:var(--r);cursor:pointer;transition:background .18s;white-space:nowrap;
+}
+.finder-footer-generate:hover{background:var(--accent-light)}
+.finder-footer-generate:disabled{opacity:.5;cursor:wait}
+
+/* ── My Fabrics – custom group empty hint ── */
+.custom-empty-hint{
+  padding:10px 14px 14px;font-size:11px;color:var(--text-muted);
+  text-align:center;line-height:1.5;font-style:italic;
+}
 </style>
 </head>
 <body>
@@ -542,59 +592,115 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
   <div id="finder-modal">
     <div class="finder-hdr">
       <div>
-        <div class="finder-title">Add Custom Fabric</div>
-        <div class="finder-sub" id="finder-sub-txt">Upload a fabric image for AI analysis, or type a description to search the texture library</div>
+        <div class="finder-title">Upload Fabric Image</div>
+        <div class="finder-sub">Convert a clean fabric photo into a seamless tiled material, or search the texture library</div>
       </div>
       <button class="finder-close" onclick="closeFabricFinder()">✕</button>
     </div>
-    <div class="finder-body">
-      <div class="finder-input-area">
+
+    <div class="finder-body-2col">
+      <!-- LEFT: upload + form -->
+      <div class="finder-left">
         <div id="finder-drop-zone" onclick="document.getElementById('finder-img-input').click()">
           <div id="finder-drop-content">
-            <div class="finder-drop-ico">⬆</div>
-            <div class="finder-drop-lbl">Upload Fabric Image</div>
-            <div class="finder-drop-hint">JPG · PNG · WebP · optional</div>
+            <div class="finder-drop-ico">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div class="finder-drop-lbl">Drag and drop a clean fabric image</div>
+            <div class="finder-drop-hint">PNG, JPG, or WebP &nbsp;·&nbsp; or from within</div>
           </div>
           <img id="finder-img-preview" style="display:none" alt="preview">
           <button class="finder-img-clear" onclick="clearFinderImage(event)" title="Remove">✕</button>
         </div>
-        <div class="finder-fields">
-          <div class="finder-field-row">
-            <label class="finder-lbl" id="finder-name-lbl">Name / Description</label>
-            <input type="text" id="finder-name" class="finder-input" placeholder="e.g. navy woven linen, dark velvet…" oninput="updateFinderMode()">
+
+        <button class="finder-choose-btn" onclick="document.getElementById('finder-img-input').click()">Choose File</button>
+
+        <div class="finder-form-grid">
+          <div class="finder-form-row">
+            <div class="finder-field-row">
+              <label class="finder-lbl">Fabric Type</label>
+              <select id="finder-material-type" class="finder-select" onchange="updateFinderMode()">
+                <option value="">Any type</option>
+                <option value="fabric">Fabric / Textile</option>
+                <option value="linen">Linen</option>
+                <option value="leather">Leather</option>
+                <option value="vinyl">Vinyl</option>
+                <option value="pu">PU / Faux Leather</option>
+                <option value="suede">Suede / Velvet</option>
+                <option value="wood">Wood</option>
+              </select>
+            </div>
+            <div class="finder-field-row">
+              <label class="finder-lbl" id="finder-name-lbl">Material Name</label>
+              <input type="text" id="finder-name" class="finder-input" placeholder="e.g. Navy Woven Linen" oninput="updateFinderMode()">
+            </div>
+          </div>
+          <div class="finder-scale-row">
+            <label class="finder-lbl">Repeat</label>
+            <div class="finder-scale-inputs">
+              <input type="number" id="finder-scale-val" class="finder-input finder-input-sm" value="10" min="2" max="20" step="0.5">
+              <span class="finder-scale-sep">↔</span>
+              <input type="number" class="finder-input finder-input-sm" value="16" min="2" max="20" step="0.5" tabindex="-1" style="opacity:.4;pointer-events:none">
+            </div>
           </div>
           <div class="finder-field-row">
-            <label class="finder-lbl">Material Type</label>
-            <select id="finder-material-type" class="finder-select" onchange="updateFinderMode()">
-              <option value="">Any type</option>
-              <option value="fabric">Fabric / Textile</option>
-              <option value="linen">Linen</option>
-              <option value="leather">Leather</option>
-              <option value="vinyl">Vinyl</option>
-              <option value="pu">PU / Faux Leather</option>
-              <option value="suede">Suede / Velvet</option>
-              <option value="wood">Wood</option>
+            <label class="finder-lbl">Scale amount size</label>
+            <select class="finder-select">
+              <option>Standard tile</option>
+              <option>Large pattern</option>
+              <option>Fine detail</option>
             </select>
           </div>
-          <div id="finder-analysis"></div>
-          <button id="finder-btn" onclick="analyzeAndAddFabric()">
-            <span id="finder-btn-txt">Search Fabrics</span>
-          </button>
         </div>
       </div>
-      <div id="finder-results-area" style="display:none">
-        <div class="finder-results-hdr">
-          <span id="finder-results-title">Results</span>
+
+      <!-- RIGHT: preview + filters/results -->
+      <div class="finder-right">
+        <div class="finder-right-hdr">
+          <span class="finder-right-title" id="finder-right-title">Preview ready material</span>
+          <span class="finder-right-dot" id="finder-right-dot"></span>
+        </div>
+
+        <div class="finder-preview-box" id="finder-preview-box">
+          <div class="finder-preview-placeholder" id="finder-preview-placeholder">
+            <div class="finder-preview-ph-ico">▪</div>
+            <div class="finder-preview-ph-lbl">Upload an image to preview</div>
+          </div>
+          <img id="finder-preview-full" style="display:none" alt="preview">
+        </div>
+
+        <div id="finder-props-rows" style="display:none"></div>
+
+        <div class="finder-filter-section" id="finder-filter-section">
+          <div class="finder-filter-label">Quick Filters</div>
           <div class="finder-quick-filters">
             <button class="finder-chip" onclick="quickSearch('upholstery fabric')">Upholstery</button>
-            <button class="finder-chip" onclick="quickSearch('linen')">Linen</button>
+            <button class="finder-chip" onclick="quickSearch('linen cotton')">Linen</button>
             <button class="finder-chip" onclick="quickSearch('leather')">Leather</button>
-            <button class="finder-chip" onclick="quickSearch('velvet')">Velvet</button>
-            <button class="finder-chip" onclick="quickSearch('canvas cotton')">Canvas</button>
+            <button class="finder-chip" onclick="quickSearch('velvet suede')">Velvet</button>
+            <button class="finder-chip" onclick="quickSearch('canvas')">Canvas</button>
             <button class="finder-chip" onclick="quickSearch('outdoor vinyl')">Outdoor</button>
           </div>
         </div>
-        <div id="finder-results-grid"></div>
+
+        <div id="finder-results-area" style="display:none">
+          <div class="finder-results-hdr">
+            <span id="finder-results-title">Results</span>
+          </div>
+          <div id="finder-results-grid"></div>
+        </div>
+
+        <div class="finder-hint-text" id="finder-hint-text">Can't find the right material? Try the quick filters above or type a name to search.</div>
+      </div>
+    </div>
+
+    <div class="finder-footer">
+      <button class="finder-footer-cancel" onclick="closeFabricFinder()">Cancel</button>
+      <div class="finder-footer-actions">
+        <button class="finder-footer-save" id="finder-save-btn" onclick="saveAsMaterial()" disabled>Save as Material</button>
+        <button class="finder-footer-generate" id="finder-btn" onclick="analyzeAndAddFabric()">
+          <span id="finder-btn-txt">Search Fabrics</span>
+        </button>
       </div>
     </div>
   </div>
@@ -2352,18 +2458,27 @@ function openFabricFinder() {
 
 function closeFabricFinder() {
   document.getElementById('finder-overlay').classList.remove('open');
-  // Reset results area so next open is clean
+  // Full reset for next open
+  clearFinderImage({ stopPropagation:()=>{} });
+  document.getElementById('finder-name').value = '';
+  document.getElementById('finder-material-type').value = '';
+  document.getElementById('finder-scale-val').value = '10';
   document.getElementById('finder-results-area').style.display = 'none';
   document.getElementById('finder-results-grid').innerHTML = '';
+  document.getElementById('finder-props-rows').style.display = 'none';
+  document.getElementById('finder-props-rows').innerHTML = '';
+  document.getElementById('finder-filter-section').style.display = '';
+  document.getElementById('finder-hint-text').style.display = '';
+  document.getElementById('finder-right-title').textContent = 'Preview ready material';
   document.querySelectorAll('.finder-chip').forEach(c => c.classList.remove('active'));
 }
 
 function updateFinderMode() {
   const hasImg = !!_finderImgData;
   document.getElementById('finder-btn-txt').textContent =
-    hasImg ? 'Analyze & Add to My Fabrics' : 'Search Fabrics';
-  document.getElementById('finder-name-lbl').textContent =
-    hasImg ? 'Fabric Name (optional)' : 'Name / Description';
+    hasImg ? 'Generate Preview Material' : 'Search Fabrics';
+  const saveBtn = document.getElementById('finder-save-btn');
+  if (saveBtn) saveBtn.disabled = !hasImg;
 }
 
 function handleFinderImage(input) {
@@ -2372,12 +2487,20 @@ function handleFinderImage(input) {
   const reader = new FileReader();
   reader.onload = e => {
     _finderImgData = e.target.result.split(',')[1];
-    const preview = document.getElementById('finder-img-preview');
-    preview.src = e.target.result;
-    preview.style.display = 'block';
+    // Drop zone thumb
+    const dPreview = document.getElementById('finder-img-preview');
+    dPreview.src = e.target.result; dPreview.style.display = 'block';
     document.getElementById('finder-drop-content').style.display = 'none';
     document.getElementById('finder-drop-zone').classList.add('has-img');
+    // Right panel: show full preview, hide placeholder
+    const fullPrev = document.getElementById('finder-preview-full');
+    fullPrev.src = e.target.result; fullPrev.style.display = 'block';
+    document.getElementById('finder-preview-placeholder').style.display = 'none';
+    document.getElementById('finder-right-dot').classList.add('active');
+    document.getElementById('finder-right-title').textContent = 'Preview ready material';
+    // Hide search results
     document.getElementById('finder-results-area').style.display = 'none';
+    document.getElementById('finder-props-rows').style.display = 'none';
     updateFinderMode();
   };
   reader.readAsDataURL(file);
@@ -2386,13 +2509,38 @@ function handleFinderImage(input) {
 function clearFinderImage(e) {
   e.stopPropagation();
   _finderImgData = null;
-  const preview = document.getElementById('finder-img-preview');
-  preview.src = ''; preview.style.display = 'none';
+  // Drop zone
+  const dPreview = document.getElementById('finder-img-preview');
+  dPreview.src = ''; dPreview.style.display = 'none';
   document.getElementById('finder-drop-content').style.display = '';
   document.getElementById('finder-drop-zone').classList.remove('has-img');
   document.getElementById('finder-img-input').value = '';
-  document.getElementById('finder-analysis').style.display = 'none';
+  // Right panel
+  const fullPrev = document.getElementById('finder-preview-full');
+  fullPrev.src = ''; fullPrev.style.display = 'none';
+  document.getElementById('finder-preview-placeholder').style.display = '';
+  document.getElementById('finder-right-dot').classList.remove('active');
+  document.getElementById('finder-right-title').textContent = 'Preview ready material';
+  document.getElementById('finder-props-rows').style.display = 'none';
+  document.getElementById('finder-props-rows').innerHTML = '';
   updateFinderMode();
+}
+
+// Save without AI (image required)
+async function saveAsMaterial() {
+  if (!_finderImgData) return;
+  let name = document.getElementById('finder-name').value.trim();
+  let type = document.getElementById('finder-material-type').value || 'fabric';
+  const scale = parseFloat(document.getElementById('finder-scale-val').value) || 10;
+  if (!name) name = 'Custom Fabric ' + (CUSTOM_FABRIC_ITEMS.length + 1);
+  CUSTOM_FABRIC_ITEMS.push({
+    name, img: 'data:image/jpeg;base64,' + _finderImgData,
+    type, hex: '#c8c0b8', vendor:'custom', series:'My Fabrics',
+    _defaults: { roughness:0.72, sheen:0.1, metalness:0.0, scale, norm:1.0 },
+  });
+  buildLibrary();
+  showToast('✓ ' + name + ' saved to My Fabrics');
+  closeFabricFinder();
 }
 
 // Entry point — branches on whether an image is loaded
@@ -2416,7 +2564,8 @@ async function _analyzeImageAndAdd() {
   try {
     let name    = document.getElementById('finder-name').value.trim();
     let type    = document.getElementById('finder-material-type').value;
-    let aiProps = { roughness:0.72, sheen:0.1, metalness:0.0, scale:10.0, norm:1.0 };
+    const userScale = parseFloat(document.getElementById('finder-scale-val').value) || null;
+    let aiProps = { roughness:0.72, sheen:0.1, metalness:0.0, scale:userScale||10.0, norm:1.0 };
     let hex     = '#c8c0b8';
 
     const hasApi = await _checkEndpoint('/api/find-fabric');
@@ -2434,10 +2583,13 @@ async function _analyzeImageAndAdd() {
           if (d.roughness !== undefined)  aiProps.roughness = +d.roughness;
           if (d.sheen     !== undefined)  aiProps.sheen     = +d.sheen;
           if (d.metalness !== undefined)  aiProps.metalness = +d.metalness;
-          if (d.scale     !== undefined)  aiProps.scale     = +d.scale;
-          if (d.norm      !== undefined)  aiProps.norm      = +d.norm;
+          if (!userScale && d.scale !== undefined) {
+            aiProps.scale = +d.scale;
+            document.getElementById('finder-scale-val').value = d.scale;
+          }
+          if (d.norm !== undefined)       aiProps.norm = +d.norm;
           if (d.hex)                      hex = d.hex;
-          _showFinderAnalysis(d);
+          _showFinderAnalysis({ ...d, name: name || d.name, type: type || d.type });
         }
       } catch(e) { console.warn('AI analysis skipped:', e.message); }
     }
@@ -2452,10 +2604,6 @@ async function _analyzeImageAndAdd() {
     buildLibrary();
     showToast('✓ ' + name + ' added to My Fabrics');
     closeFabricFinder();
-    clearFinderImage({ stopPropagation:()=>{} });
-    document.getElementById('finder-name').value = '';
-    document.getElementById('finder-material-type').value = '';
-    document.getElementById('finder-analysis').style.display = 'none';
 
   } catch(e) {
     console.error('_analyzeImageAndAdd:', e);
@@ -2474,9 +2622,11 @@ async function _searchAndShow(query, matType, activeChip) {
 
   const resultsArea = document.getElementById('finder-results-area');
   resultsArea.style.display = 'block';
+  document.getElementById('finder-hint-text').style.display = 'none';
   document.getElementById('finder-results-grid').innerHTML =
     '<div class="finder-state"><div class="finder-state-spin"></div><span>Searching texture libraries…</span></div>';
   document.getElementById('finder-results-title').textContent = 'Searching…';
+  document.getElementById('finder-right-title').textContent = 'Search Results';
 
   // Update chip active state
   document.querySelectorAll('.finder-chip').forEach(c => c.classList.remove('active'));
@@ -2543,9 +2693,10 @@ async function _searchPolyHaven(keywords, matType) {
 }
 
 async function _searchAmbientCG(query) {
-  const url = `https://ambientcg.com/api/v2/full_json?include=downloadData&type=Atlas&sort=Popular&limit=14&q=${encodeURIComponent(query)}`;
-  const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
-  if (!r.ok) throw new Error('AmbientCG unreachable');
+  const r = await fetch(`/api/acg-search?q=${encodeURIComponent(query)}&limit=14`, {
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!r.ok) throw new Error('AmbientCG proxy unreachable');
   const data = await r.json();
   return (data.foundAssets || [])
     .filter(a => {
@@ -2664,24 +2815,43 @@ async function _addFromSearchResult(result, cardEl) {
 }
 
 function _showFinderAnalysis(d) {
-  const el = document.getElementById('finder-analysis');
-  el.style.display = 'block';
+  const el = document.getElementById('finder-props-rows');
+  if (!el) return;
   const typeLabel = (d.type || 'fabric').replace(/_/g, ' ');
+  const hex = d.hex || '#c8c0b8';
+  const roughness = (+d.roughness || 0.72).toFixed(2);
+  const scale = (+d.scale || 10).toFixed(1);
   el.innerHTML = `
-    <div class="finder-analysis-chip">
-      <span class="finder-analysis-label">Detected</span>
-      <span class="finder-analysis-val">${d.name || '—'}</span>
-      <span class="finder-analysis-sep">·</span>
-      <span class="finder-analysis-type">${typeLabel}</span>
+    <div class="finder-prop-row">
+      <div class="finder-prop-row-lbl">
+        <div class="finder-prop-dot" style="background:${hex}"></div>Color
+      </div>
+      <div class="finder-prop-row-val" style="font-size:10px;letter-spacing:.04em">${hex.toUpperCase()}</div>
     </div>
-    ${d.description ? `<div class="finder-analysis-desc">${d.description}</div>` : ''}
-    <div class="finder-analysis-props">
-      <div class="finder-prop"><span>Roughness</span><span>${(+d.roughness||0.72).toFixed(2)}</span></div>
-      <div class="finder-prop"><span>Scale</span><span>${(+d.scale||10).toFixed(1)}</span></div>
-      <div class="finder-prop"><span>Sheen</span><span>${(+d.sheen||0).toFixed(2)}</span></div>
-      <div class="finder-prop"><span>Bump</span><span>${(+d.norm||1).toFixed(1)}</span></div>
+    <div class="finder-prop-row">
+      <div class="finder-prop-row-lbl">Material type</div>
+      <span class="finder-prop-row-tag">${typeLabel}</span>
     </div>
+    <div class="finder-prop-row">
+      <div class="finder-prop-row-lbl">Roughness &amp; Normal</div>
+      <div class="finder-prop-row-muted">${roughness} · Auto Generate</div>
+    </div>
+    <div class="finder-prop-row">
+      <div class="finder-prop-row-lbl">Scale attributes</div>
+      <div class="finder-prop-row-val">${scale} ↔ 16.0</div>
+    </div>
+    ${d.description ? `<div style="font-size:10px;color:var(--text-muted);font-style:italic;padding:3px 2px;line-height:1.5">${d.description}</div>` : ''}
   `;
+  el.style.display = 'flex';
+  el.style.flexDirection = 'column';
+  el.style.gap = '5px';
+  el.style.animation = 'fadeSlideIn .2s ease';
+  // Update right panel header
+  document.getElementById('finder-right-title').textContent = d.name || 'Detected material';
+  document.getElementById('finder-right-dot').classList.add('active');
+  // Hide quick filters, show props
+  document.getElementById('finder-filter-section').style.display = 'none';
+  document.getElementById('finder-hint-text').style.display = 'none';
 }
 
 async function _checkEndpoint(path) {
