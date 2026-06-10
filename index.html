@@ -478,6 +478,22 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
 .finder-cust-btn.solid{background:var(--accent);border:1px solid var(--accent);color:#fff}
 .finder-cust-btn.solid:hover:not(:disabled){background:var(--accent-light)}
 .finder-cust-btn:disabled{opacity:.38;cursor:default}
+.finder-prev-model-btn{
+  width:100%;padding:9px 12px;font-family:var(--font-b);font-size:11px;font-weight:600;
+  letter-spacing:.03em;border-radius:var(--r);cursor:pointer;transition:all .15s;
+  background:var(--accent);border:1px solid var(--accent);color:#fff;
+  align-items:center;justify-content:center;gap:6px;
+}
+.finder-prev-model-btn:hover{background:var(--accent-light)}
+.finder-prev-model-btn:disabled{opacity:.5;cursor:wait}
+.finder-analysis-type-badge{
+  display:flex;align-items:center;gap:8px;padding:9px 10px;
+  background:var(--accent-pale);border:1px solid var(--accent-light);border-radius:var(--r);
+  animation:fadeSlideIn .2s ease;
+}
+.finder-type-ico{font-size:15px;color:var(--accent);line-height:1}
+.finder-type-lbl{font-size:13px;font-weight:700;color:var(--text);text-transform:capitalize;letter-spacing:.02em}
+.finder-type-sub{font-size:9px;color:var(--accent);font-weight:600;margin-left:auto;letter-spacing:.06em;text-transform:uppercase;background:rgba(67,97,238,.12);padding:2px 6px;border-radius:3px}
 
 /* ══ Search results list ════════════════════════════════════════ */
 #finder-results-wrapper{display:flex;flex-direction:column;gap:8px;flex:1}
@@ -845,6 +861,10 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;b
             <img id="finder-preview-full" style="display:none" alt="preview">
           </div>
           <div id="finder-props-rows" style="display:none"></div>
+          <button class="finder-prev-model-btn" id="finder-prev-model-btn" style="display:none" onclick="previewAnalyzedOnModel()">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Preview on Model
+          </button>
           <div class="finder-hint-text" id="finder-hint-text-upload">Upload a fabric photo — AI detects material properties and makes it seamlessly tileable.</div>
         </div>
 
@@ -1376,6 +1396,7 @@ async function applySwatchToEntries(item, targetEntries) {
     fabric:  { roughness:0.72, sheen:0.10, metalness:0.0, scale:10.0, norm:1.0 },
   };
   const defs = item._defaults || defaults[item.type] || defaults.fabric;
+  _currentAppliedDiffUrl = (item._defaults && item._defaults.diffUrl) || item.img || null;
   sRoughness=defs.roughness; sMetalness=defs.metalness; sSheen=defs.sheen; sScale=defs.scale; sNorm=defs.norm;
   ['brightness','roughness','metalness','sheen','scale','norm',
    'brightness-r','roughness-r','scale-r'].forEach(id=>{
@@ -1513,56 +1534,87 @@ function openDiffuseUpload() {
 })();
 
 // ── Seamless texture via canvas cross-fade blend ──────────────────────────
-function makeSeamlessTexture(dataUrl) {
-  return new Promise(resolve => {
+async function makeSeamlessTexture(dataUrl) {
+  // Step 1: Remove directional lighting gradients (de-light)
+  // Blur the image to get the local illumination field, then divide each pixel
+  // by it so the result has uniform brightness throughout — eliminates the
+  // dark-edge / bright-centre patches that make the cross-fade look blotchy.
+  const normC = await new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
-      // Cap size for performance — 512px is plenty for fabric tiles
       const MAX = 512;
       const sc = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
       const W = Math.round(img.naturalWidth * sc);
       const H = Math.round(img.naturalHeight * sc);
-      const nw = img.naturalWidth, nh = img.naturalHeight;
 
-      // Offset version: rearrange quadrants so the original edge seam moves to the center
-      const off = document.createElement('canvas');
-      off.width = W; off.height = H;
-      const oc = off.getContext('2d');
-      oc.drawImage(img, nw/2, nh/2, nw/2, nh/2,  0,   0,   W/2, H/2);
-      oc.drawImage(img,  0,  nh/2, nw/2, nh/2,  W/2,  0,   W/2, H/2);
-      oc.drawImage(img, nw/2,  0,  nw/2, nh/2,  0,   H/2, W/2, H/2);
-      oc.drawImage(img,  0,   0,   nw/2, nh/2,  W/2, H/2, W/2, H/2);
-      const offPx = oc.getImageData(0, 0, W, H);
+      const src = document.createElement('canvas');
+      src.width = W; src.height = H;
+      const srcCtx = src.getContext('2d');
+      srcCtx.drawImage(img, 0, 0, W, H);
 
-      // Original (scaled)
-      const orig = document.createElement('canvas');
-      orig.width = W; orig.height = H;
-      const orgCtx = orig.getContext('2d');
-      orgCtx.drawImage(img, 0, 0, W, H);
-      const origPx = orgCtx.getImageData(0, 0, W, H);
+      // Large-radius blur = low-freq illumination field
+      const blurR = Math.round(Math.max(W, H) * 0.13);
+      const blurC = document.createElement('canvas');
+      blurC.width = W; blurC.height = H;
+      const blurCtx = blurC.getContext('2d');
+      blurCtx.filter = `blur(${blurR}px)`;
+      blurCtx.drawImage(src, 0, 0);
 
-      // Blend: at edges → use offset (no seam there), toward centre → use original
-      const out = orgCtx.createImageData(W, H);
-      const zone = 0.28; // blend-zone width as fraction of each side
-      for (let y = 0; y < H; y++) {
-        for (let x = 0; x < W; x++) {
-          const i = (y * W + x) * 4;
-          const fx = Math.min(x / (W * zone), (W - 1 - x) / (W * zone));
-          const fy = Math.min(y / (H * zone), (H - 1 - y) / (H * zone));
-          const t  = Math.min(Math.min(fx, fy), 1);
-          const s  = t * t * (3 - 2 * t); // smoothstep — 0 at edge, 1 at centre
-          for (let c = 0; c < 4; c++)
-            out.data[i+c] = Math.round(origPx.data[i+c] * s + offPx.data[i+c] * (1 - s));
-        }
+      const origD = srcCtx.getImageData(0, 0, W, H);
+      const blurD = blurCtx.getImageData(0, 0, W, H);
+
+      // Global mean luminance — target brightness after normalization
+      let sumLum = 0;
+      for (let i = 0; i < blurD.data.length; i += 4)
+        sumLum += 0.299 * blurD.data[i] + 0.587 * blurD.data[i+1] + 0.114 * blurD.data[i+2];
+      const meanLum = sumLum / (W * H) || 128;
+
+      // Divide each pixel by local illumination to flatten shading
+      const out = srcCtx.createImageData(W, H);
+      for (let i = 0; i < origD.data.length; i += 4) {
+        const bL = 0.299 * blurD.data[i] + 0.587 * blurD.data[i+1] + 0.114 * blurD.data[i+2];
+        const f  = bL > 4 ? meanLum / bL : 1;
+        out.data[i]   = Math.min(255, Math.max(0, Math.round(origD.data[i]   * f)));
+        out.data[i+1] = Math.min(255, Math.max(0, Math.round(origD.data[i+1] * f)));
+        out.data[i+2] = Math.min(255, Math.max(0, Math.round(origD.data[i+2] * f)));
+        out.data[i+3] = origD.data[i+3];
       }
-      const res = document.createElement('canvas');
-      res.width = W; res.height = H;
-      res.getContext('2d').putImageData(out, 0, 0);
-      resolve(res.toDataURL('image/jpeg', 0.93));
+      srcCtx.putImageData(out, 0, 0);
+      resolve(src);
     };
     img.crossOrigin = 'anonymous';
     img.src = dataUrl;
   });
+
+  // Step 2: Seamless blend — shift quadrants so edges meet at centre, cross-fade
+  const W = normC.width, H = normC.height;
+  const normCtx = normC.getContext('2d');
+
+  const off = document.createElement('canvas');
+  off.width = W; off.height = H;
+  const oc = off.getContext('2d');
+  oc.drawImage(normC, W/2, H/2, W/2, H/2,   0,   0, W/2, H/2);
+  oc.drawImage(normC,   0, H/2, W/2, H/2, W/2,   0, W/2, H/2);
+  oc.drawImage(normC, W/2,   0, W/2, H/2,   0, H/2, W/2, H/2);
+  oc.drawImage(normC,   0,   0, W/2, H/2, W/2, H/2, W/2, H/2);
+  const offPx  = oc.getImageData(0, 0, W, H);
+  const origPx = normCtx.getImageData(0, 0, W, H);
+
+  const blendOut = normCtx.createImageData(W, H);
+  const zone = 0.30;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const fx = Math.min(x / (W * zone), (W - 1 - x) / (W * zone));
+      const fy = Math.min(y / (H * zone), (H - 1 - y) / (H * zone));
+      const t  = Math.min(Math.min(fx, fy), 1);
+      const s  = t * t * (3 - 2 * t); // smoothstep: 0 at edges → 1 at centre
+      for (let c = 0; c < 4; c++)
+        blendOut.data[i+c] = Math.round(origPx.data[i+c] * s + offPx.data[i+c] * (1 - s));
+    }
+  }
+  normCtx.putImageData(blendOut, 0, 0);
+  return normC.toDataURL('image/jpeg', 0.93);
 }
 
 async function handleDiffuseUpload(file) {
@@ -1585,6 +1637,7 @@ async function handleDiffuseUpload(file) {
   let dataUrl = rawUrl;
   try { dataUrl = await makeSeamlessTexture(rawUrl); } catch(_) {}
   if (replBtn) replBtn.classList.remove('processing');
+  _currentAppliedDiffUrl = dataUrl;
 
   const tex = await tryLoadTex(dataUrl, true).catch(() => null);
   if (!tex) { showToast('Could not load image'); return; }
@@ -2821,10 +2874,13 @@ function handleGLBUpload(input) {
 // ── Fabric Finder ─────────────────────────────────────────────────────────
 let _finderImgData   = null;
 let _phCache         = null;
-let _finderTab       = 'upload';       // 'upload' | 'search'
-let _selectedResult  = null;           // search result awaiting add/try
-let _pendingResult   = null;           // result pending confirm-bar decision
-let _searchCustomImg = null;           // base64 custom image uploaded in search tab
+let _finderTab           = 'upload';   // 'upload' | 'search'
+let _selectedResult      = null;       // search result awaiting add/try
+let _pendingResult       = null;       // result pending confirm-bar decision
+let _searchCustomImg     = null;       // base64 custom image uploaded in search tab
+let _currentAppliedDiffUrl = null;    // currently applied diffuse URL (tracks custom uploads too)
+let _pendingUploadPreview  = null;    // set when previewing from upload tab
+let _analyzedResult        = null;    // last AI analysis (before save)
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchFinderTab(tab) {
@@ -2874,9 +2930,14 @@ function closeFabricFinder() {
 function updateFinderMode() {
   const hasImg = !!_finderImgData;
   const t = document.getElementById('finder-btn-txt');
-  if(t) t.textContent = hasImg ? 'Analyze & Add' : 'Analyze & Add';
+  if(t) t.textContent = hasImg ? 'Analyze Fabric' : 'Analyze & Add';
   const saveBtn = document.getElementById('finder-save-btn');
   if (saveBtn) saveBtn.disabled = !hasImg;
+  if (!hasImg) {
+    _analyzedResult = null;
+    const pmBtn = document.getElementById('finder-prev-model-btn');
+    if (pmBtn) { pmBtn.style.display = 'none'; pmBtn.disabled = false; }
+  }
 }
 
 function handleFinderImage(input) {
@@ -3000,18 +3061,52 @@ async function addSearchCustomToLibrary() {
 // Save without AI (image required)
 async function saveAsMaterial() {
   if (!_finderImgData) return;
-  let name = document.getElementById('finder-name').value.trim();
-  let type = document.getElementById('finder-material-type').value || 'fabric';
-  const scale = parseFloat(document.getElementById('finder-scale-val').value) || 10;
-  if (!name) name = 'Custom Fabric ' + (CUSTOM_FABRIC_ITEMS.length + 1);
+  let name = document.getElementById('finder-name').value.trim()
+    || _analyzedResult?.name
+    || ('Custom Fabric ' + (CUSTOM_FABRIC_ITEMS.length + 1));
+  let type = document.getElementById('finder-material-type').value
+    || _analyzedResult?.type
+    || 'fabric';
+  const scale = parseFloat(document.getElementById('finder-scale-val').value) || _analyzedResult?.aiProps?.scale || 10;
+  const aiProps = _analyzedResult?.aiProps || { roughness:0.72, sheen:0.1, metalness:0.0, norm:1.0 };
+  const diffUrl = 'data:image/jpeg;base64,' + _finderImgData;
   CUSTOM_FABRIC_ITEMS.push({
-    name, img: 'data:image/jpeg;base64,' + _finderImgData,
-    type, hex: '#c8c0b8', vendor:'custom', series:'My Fabrics',
-    _defaults: { roughness:0.72, sheen:0.1, metalness:0.0, scale, norm:1.0 },
+    name, img: diffUrl, type,
+    hex: _analyzedResult?.hex || '#c8c0b8', vendor:'custom', series:'My Fabrics',
+    _defaults: { ...aiProps, scale, diffUrl },
   });
   buildLibrary();
   showToast('✓ ' + name + ' saved to My Fabrics');
   closeFabricFinder();
+}
+
+async function previewAnalyzedOnModel() {
+  if (!_finderImgData) return;
+  const btn = document.getElementById('finder-prev-model-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+
+  const name    = document.getElementById('finder-name').value.trim() || _analyzedResult?.name || 'Custom Fabric';
+  const type    = document.getElementById('finder-material-type').value || _analyzedResult?.type || 'fabric';
+  const aiProps = _analyzedResult?.aiProps || { roughness:0.72, sheen:0.1, metalness:0.0, scale:10.0, norm:1.0 };
+
+  let dataUrl = 'data:image/jpeg;base64,' + _finderImgData;
+  try {
+    showToast('Making seamless…');
+    dataUrl = await makeSeamlessTexture(dataUrl);
+  } catch(_) {}
+
+  const previewItem = {
+    name, img: dataUrl, type,
+    hex: _analyzedResult?.hex || '#c8c0b8', vendor:'custom', series:'My Fabrics',
+    _defaults: { ...aiProps, diffUrl: dataUrl },
+  };
+  const checked = meshEntries.filter(e => e.checked);
+  if (checked.length) await applySwatchToEntries(previewItem, checked);
+
+  _pendingUploadPreview = { name, type, aiProps, diffUrl: dataUrl };
+  _pendingResult = null;
+  closeFabricFinder();
+  showConfirmBar(name);
 }
 
 // Entry point — branches on whether an image is loaded
@@ -3068,20 +3163,18 @@ async function _analyzeImageAndAdd() {
     if (!name) name = 'Custom Fabric ' + (CUSTOM_FABRIC_ITEMS.length + 1);
     if (!type) type = 'fabric';
 
-    CUSTOM_FABRIC_ITEMS.push({
-      name, img: 'data:image/jpeg;base64,' + _finderImgData,
-      type, hex, vendor:'custom', series:'My Fabrics', _defaults: aiProps,
-    });
-    buildLibrary();
-    showToast('✓ ' + name + ' added to My Fabrics');
-    closeFabricFinder();
+    // Store result — user clicks Save or Preview on Model to finalise
+    _analyzedResult = { name, type, hex, aiProps, imgData: _finderImgData };
+    const pmBtn = document.getElementById('finder-prev-model-btn');
+    if (pmBtn) { pmBtn.style.display = 'flex'; pmBtn.disabled = false; }
+    showToast('AI analysis done — click Preview or Save');
 
   } catch(e) {
     console.error('_analyzeImageAndAdd:', e);
-    showToast('Failed to add fabric');
+    showToast('Analysis failed');
   } finally {
     btn.disabled = false;
-    updateFinderMode();
+    document.getElementById('finder-btn-txt').textContent = 'Analyze Fabric';
   }
 }
 
@@ -3348,20 +3441,34 @@ function showConfirmBar(name) {
 function hideConfirmBar() {
   document.getElementById('finder-confirm-bar').classList.remove('visible');
   _pendingResult = null;
+  _pendingUploadPreview = null;
 }
 async function confirmAddFromBar() {
-  if (!_pendingResult) { hideConfirmBar(); return; }
-  const { result, diffUrl, normUrl, roughUrl, typeGuess } = _pendingResult;
+  if (!_pendingResult && !_pendingUploadPreview) { hideConfirmBar(); return; }
+
+  // Capture all state before hideConfirmBar clears the pending vars
+  const pr = _pendingResult;
+  const pu = _pendingUploadPreview;
+  // _currentAppliedDiffUrl tracks any custom image the user may have swapped in after previewing
+  const finalDiffUrl = _currentAppliedDiffUrl || pr?.diffUrl || pu?.diffUrl || null;
+  const normUrl  = pr?.normUrl  || null;
+  const roughUrl = pr?.roughUrl || null;
+  const name = pr?.result?.name || pu?.name || ('Custom Fabric ' + (CUSTOM_FABRIC_ITEMS.length + 1));
+  const type = pr?.typeGuess    || pu?.type  || 'fabric';
+  const thumb = pr?.result?.thumb || finalDiffUrl;
+
   hideConfirmBar();
-  const typeG = typeGuess || 'fabric';
   CUSTOM_FABRIC_ITEMS.push({
-    name: result.name, img: result.thumb || diffUrl, type: typeG,
-    hex: '#c8c0b8', vendor:'custom', series:'My Fabrics',
-    _defaults: { roughness:0.72, sheen:0.1, metalness:0.0, scale:10.0, norm:1.0, diffUrl, normUrl, roughUrl },
+    name, img: thumb, type, hex: '#c8c0b8', vendor:'custom', series:'My Fabrics',
+    _defaults: {
+      // Save the CURRENT slider state — not the original fabric defaults
+      roughness: sRoughness, sheen: sSheen, metalness: sMetalness,
+      scale: sScale, norm: sNorm,
+      diffUrl: finalDiffUrl, normUrl, roughUrl,
+    },
   });
   buildLibrary();
-  showToast('✓ ' + result.name + ' saved to My Fabrics');
-  _pendingResult = null;
+  showToast('✓ ' + name + ' saved to My Fabrics');
 }
 
 async function _addFromSearchResult(result, cardEl) {
@@ -3432,6 +3539,11 @@ function _showFinderAnalysis(d) {
   const roughness = (+d.roughness || 0.72).toFixed(2);
   const scale = (+d.scale || 10).toFixed(1);
   el.innerHTML = `
+    <div class="finder-analysis-type-badge">
+      <span class="finder-type-ico">◈</span>
+      <span class="finder-type-lbl">${typeLabel}</span>
+      <span class="finder-type-sub">AI Detected</span>
+    </div>
     <div class="finder-prop-row">
       <div class="finder-prop-row-lbl">
         <div class="finder-prop-dot" style="background:${hex}"></div>Color
@@ -3439,23 +3551,18 @@ function _showFinderAnalysis(d) {
       <div class="finder-prop-row-val" style="font-size:10px;letter-spacing:.04em">${hex.toUpperCase()}</div>
     </div>
     <div class="finder-prop-row">
-      <div class="finder-prop-row-lbl">Material type</div>
-      <span class="finder-prop-row-tag">${typeLabel}</span>
-    </div>
-    <div class="finder-prop-row">
       <div class="finder-prop-row-lbl">Roughness &amp; Normal</div>
       <div class="finder-prop-row-muted">${roughness} · Auto Generate</div>
     </div>
     <div class="finder-prop-row">
-      <div class="finder-prop-row-lbl">Scale attributes</div>
-      <div class="finder-prop-row-val">${scale} ↔ 16.0</div>
+      <div class="finder-prop-row-lbl">Scale</div>
+      <div class="finder-prop-row-val">${scale}</div>
     </div>
     ${d.description ? `<div style="font-size:10px;color:var(--text-muted);font-style:italic;padding:3px 2px;line-height:1.5">${d.description}</div>` : ''}
   `;
   el.style.display = 'flex';
   el.style.flexDirection = 'column';
   el.style.gap = '5px';
-  el.style.animation = 'fadeSlideIn .2s ease';
   const rt = document.getElementById('finder-right-title');
   if(rt) rt.textContent = d.name || 'Detected material';
   const rdot = document.getElementById('finder-right-dot');
